@@ -630,10 +630,17 @@ def installed_cell(root):
 
 def block_for(key, cell=DEFAULT_CELL):
     """The CLAUDE.md section, written once and thereafter only refreshed."""
-    return f"""## End every response with this repository's identicon
+    return f"""## Sign every response with this repository's identicon
 
 Emit this line, verbatim, as the last line of every response in this
 repository. Nothing after it.
+
+**Also emit it immediately before asking the user anything** -- as the last
+line of the text preceding a question, including before a tool call that puts
+a question to them. A turn that ends in a question may never reach a turn-end
+at all, so it is both the turn most likely to lose the mark and the one where
+the reader most needs it: they are being asked to stop and decide, and which
+project is asking is part of the question.
 
 {image_for(key, cell)}
 
