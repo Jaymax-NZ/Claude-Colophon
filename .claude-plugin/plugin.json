@@ -1,0 +1,7 @@
+{
+  "name": "claude-colophon",
+  "description": "Give every repository an identicon, and sign each turn with it — so parallel Claude sessions are distinguishable at a glance",
+  "author": {
+    "name": "Justin Maxwell"
+  }
+}
