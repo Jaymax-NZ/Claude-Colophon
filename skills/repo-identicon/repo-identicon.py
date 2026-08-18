@@ -670,8 +670,19 @@ deterministic. This is the second of the two, chosen knowingly.
 """
 
 
-def install(path, cell=None):
-    """Write the artifacts and place or refresh the instruction.
+def install(path, cell=None, instruct=True):
+    """Write the artifacts and, by default, place or refresh the instruction.
+
+    Two things are being installed and they are separable. The **artifacts** are
+    a repository's visual identity, useful to a README, a prompt or a badge, and
+    they cost nothing to carry. The **instruction** additionally asks the model
+    to sign every turn with the mark, which is a change to how every session in
+    that repository behaves and is not everyone's taste.
+
+    `instruct=False` writes the artifacts alone. It leaves any existing
+    instruction untouched rather than removing it: withdrawing something a
+    repository has committed is not a thing to do as a side effect of asking for
+    an icon.
 
     Returns a report: the key, its source, the cell size, and what changed. An
     existing block is refreshed *in place* by swapping the one literal, so a
@@ -715,7 +726,12 @@ def install(path, cell=None):
             "disagree with each other. Remove all but one, then re-run.")
 
     if found:
+        # Refreshed even when not instructing: a literal already committed here
+        # is one this tool put there, and leaving it disagreeing with the
+        # artifacts beside it is worse than either updating or removing it.
         updated = MARKDOWN_IMAGE.sub(image_for(key, cell), text, count=1)
+    elif not instruct:
+        updated = text
     else:
         separator = "" if not text else ("\n" if text.endswith("\n") else "\n\n")
         header = f"# {os.path.basename(root)}\n\n" if not text else ""
@@ -743,7 +759,8 @@ def install(path, cell=None):
             removed.append(stale)
 
     return {"key": key, "source": source, "root": root, "cell": cell,
-            "changed": changed, "removed": removed, "refreshed": bool(found)}
+            "changed": changed, "removed": removed, "refreshed": bool(found),
+            "instructed": instruct or bool(found)}
 
 
 PORTABLE = {"remote", "override"}
@@ -761,6 +778,9 @@ def report(result, stream=sys.stdout):
         print(f"removed {os.path.relpath(path, root)}  (superseded)", file=stream)
     if not result["changed"] and not result["removed"]:
         print("       already up to date", file=stream)
+    if not result["instructed"]:
+        print("       artifacts only; no turn-end instruction installed",
+              file=stream)
     if result["source"] not in PORTABLE:
         print(
             f"\nWarning: the key is a filesystem path, so this identicon will "
@@ -775,7 +795,7 @@ def report(result, stream=sys.stdout):
 # through to a real install, which is the one mistake here that writes files
 # the caller did not ask for.
 FLAGS = {"--help", "-h", "--key", "--b64", "--png", "--svg", "--colour",
-         "--color", "--dry-run"}
+         "--color", "--text", "--dry-run", "--artifacts-only"}
 
 # The one option that takes a value. Kept separate from FLAGS so that a bare
 # `--cell` with nothing after it is an error rather than being swallowed.
@@ -856,6 +876,17 @@ def main(argv):
     if flags & {"--colour", "--color"}:
         print(hex_colour(identicon_colour(key)))
         return 0
+    if "--text" in flags:
+        renderer = _text_renderer()
+        if renderer is None:
+            print(f"no text renderer beside {os.path.basename(__file__)}",
+                  file=sys.stderr)
+            return 2
+        print(renderer.text(identicon_grid(key), identicon_colour(key)))
+        return 0
+
+    instruct = "--artifacts-only" not in flags
+
     if "--dry-run" in flags:
         print(f"key    {key}")
         print(f"source {source}")
@@ -863,14 +894,22 @@ def main(argv):
               + ("" if cell else "  (kept from what is installed)"
                  if installed_cell(root) else "  (default)"))
         print(f"under  {root}")
-        for name in (PNG_NAME, SVG_NAME, COLOUR_NAME, INSTRUCTIONS_NAME):
+        writes = [PNG_NAME, SVG_NAME, COLOUR_NAME]
+        if _text_renderer() is not None:
+            writes.append(TEXT_NAME)
+        if instruct or MARKDOWN_IMAGE.search(
+                _read(os.path.join(root, INSTRUCTIONS_NAME)) or ""):
+            writes.append(INSTRUCTIONS_NAME)
+        else:
+            print("       artifacts only; no turn-end instruction")
+        for name in writes:
             print(f"would write {name}")
         for name in SUPERSEDED:
             if os.path.exists(os.path.join(root, name)):
                 print(f"would remove {name}  (superseded)")
         return 0
 
-    report(install(path, cell))
+    report(install(path, cell, instruct))
     return 0
 
 
