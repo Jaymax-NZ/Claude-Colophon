@@ -49,6 +49,7 @@ constant would be carrying a test suite to compute a string that never changes.
 
 import base64
 import hashlib
+import importlib.util
 import os
 import re
 import struct
@@ -121,9 +122,33 @@ STEM = "repository-identicon"
 PNG_NAME = f"{DIRECTORY}/{STEM}.png"
 SVG_NAME = f"{DIRECTORY}/{STEM}.svg"
 COLOUR_NAME = f"{DIRECTORY}/{STEM}.colour"
+TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
 
-# Reserved: the text rendering, for clients that display no image at all.
-# TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
+# The text renderer, vendored beside this file. It is handed the 5x5 matrix and
+# the colour -- the two things this script has already computed before it
+# renders anything -- so it needs no key, no digest and no palette of its own,
+# and there is exactly one copy of the derivation in this plugin.
+#
+# Reading the grid back out of the rendered PNG was tried and dropped: it is a
+# lossy round trip to recover something the caller is already holding, and it
+# buys a PNG decoder, a geometry recovery and a set of failure modes about bit
+# depth and filter bytes, in exchange for nothing.
+#
+# Absent, the text form is skipped and everything else still installs. It is the
+# one artifact with a dependency, so it is the one that degrades rather than
+# failing.
+MOSAIC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      "mosaic-identicon.py")
+
+
+def _mosaic_module():
+    """Load the vendored renderer, or None if it is not beside this file."""
+    if not os.path.exists(MOSAIC):
+        return None
+    spec = importlib.util.spec_from_file_location("mosaic_identicon", MOSAIC)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 # Names this tool has used before, removed on install. A repository carrying
 # both an old artifact and its replacement leaves every consumer guessing which
@@ -662,11 +687,16 @@ def install(path, cell=None):
 
     # Every artifact ends with a newline, so each is a well-formed text file and
     # `$(cat ...)` still yields it clean -- the shell strips exactly one.
+    colour = identicon_colour(key)
     artifacts = {
         PNG_NAME: render_png(key, cell),
         SVG_NAME: render_svg(key, cell),
-        COLOUR_NAME: hex_colour(identicon_colour(key)) + "\n",
+        COLOUR_NAME: hex_colour(colour) + "\n",
     }
+
+    renderer = _mosaic_module()
+    if renderer is not None:
+        artifacts[TEXT_NAME] = renderer.mosaic(identicon_grid(key), colour) + "\n"
 
     text = _read(instructions) or ""
     found = MARKDOWN_IMAGE.findall(text)
