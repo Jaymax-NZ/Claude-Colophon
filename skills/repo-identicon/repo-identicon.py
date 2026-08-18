@@ -93,7 +93,12 @@ LIGHTNESS = 0.5
 
 # An optional committed one-line seed overriding the derived key, so a project
 # can pin its identicon across a rename or a move between forges.
-OVERRIDE_FILENAME = ".claude-state-identicon"
+#
+# The old name is still honoured on read. It is a file committed into other
+# people's repositories, and dropping it would silently change the identity it
+# was written to pin -- the one outcome an override exists to prevent.
+OVERRIDE_FILENAME = ".repository-identicon"
+LEGACY_OVERRIDE_FILENAMES = (".claude-state-identicon",)
 
 # One directory rather than four root entries, so a fifth rendering costs
 # nothing at the top level. Hidden, because these are derived artifacts of a
@@ -137,15 +142,15 @@ TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
 # Absent, the text form is skipped and everything else still installs. It is the
 # one artifact with a dependency, so it is the one that degrades rather than
 # failing.
-MOSAIC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      "mosaic-identicon.py")
+TEXT_RENDERER = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "text-identicon.py")
 
 
-def _mosaic_module():
+def _text_renderer():
     """Load the vendored renderer, or None if it is not beside this file."""
-    if not os.path.exists(MOSAIC):
+    if not os.path.exists(TEXT_RENDERER):
         return None
-    spec = importlib.util.spec_from_file_location("mosaic_identicon", MOSAIC)
+    spec = importlib.util.spec_from_file_location("text_identicon", TEXT_RENDERER)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -265,19 +270,23 @@ def repo_remote_url(path):
 
 
 def override_key(directory):
-    """The committed seed at `directory`, if there is a usable one."""
+    """The committed seed at `directory`, if there is a usable one.
+
+    The current name wins; a legacy name is honoured only when the current one
+    is absent, so a repository carrying both is not left guessing.
+    """
     if not directory:
         return None
-    candidate = os.path.join(directory, OVERRIDE_FILENAME)
-    try:
-        with open(candidate, encoding="utf-8") as handle:
-            text = handle.read()
-    except (OSError, UnicodeDecodeError):
-        return None
-    for line in text.splitlines():
-        line = line.strip()
-        if line and not line.startswith("#"):
-            return line
+    for name in (OVERRIDE_FILENAME, *LEGACY_OVERRIDE_FILENAMES):
+        try:
+            with open(os.path.join(directory, name), encoding="utf-8") as handle:
+                text = handle.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                return line
     return None
 
 
@@ -286,7 +295,7 @@ def resolve_key(path=None):
 
     Precedence, most specific first:
 
-      override   a committed .claude-state-identicon at the repository root
+      override   a committed .repository-identicon at the repository root
       remote     host/owner/repo from the git remote -- the portable one
       toplevel   the repository root path, for a repository with no remote
       path       the directory itself, outside a repository
@@ -694,9 +703,9 @@ def install(path, cell=None):
         COLOUR_NAME: hex_colour(colour) + "\n",
     }
 
-    renderer = _mosaic_module()
+    renderer = _text_renderer()
     if renderer is not None:
-        artifacts[TEXT_NAME] = renderer.mosaic(identicon_grid(key), colour) + "\n"
+        artifacts[TEXT_NAME] = renderer.text(identicon_grid(key), colour) + "\n"
 
     text = _read(instructions) or ""
     found = MARKDOWN_IMAGE.findall(text)

@@ -143,7 +143,7 @@ clone:
 
 | source | key | portable |
 |---|---|---|
-| `override` | a committed `.claude-state-identicon` at the root | yes |
+| `override` | a committed `.repository-identicon` at the root | yes |
 | `remote` | `host/owner/repo` from the git remote | **yes** |
 | `toplevel` | the repository root path | no |
 | `path` | the directory itself, outside a repository | no |
@@ -154,7 +154,7 @@ repository is cloned to another machine **or opened in a git worktree**, and
 the desktop app gives every parallel session its own worktree — which would
 give each parallel session in one project a different mark, precisely
 inverting what the identicon is for. Offer to add a remote, or to commit a
-one-line `.claude-state-identicon` naming a stable key.
+one-line `.repository-identicon` naming a stable key.
 
 ## When it is already installed
 
