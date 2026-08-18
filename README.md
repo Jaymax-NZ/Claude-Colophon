@@ -28,15 +28,19 @@ on every turn.
 
 | file | consumer |
 |---|---|
-| `.identicon/png.b64` | the `CLAUDE.md` literal; a `data:` URI cannot reference a path |
-| `.identicon/icon.png` | a README, or anywhere SVG is refused |
-| `.identicon/icon.svg` | a README on a forge that renders it; anything scalable |
-| `.identicon/colour` | `#rrggbb`, for a prompt, a badge, or a theme |
+| `.identicon/repository-identicon.png` | a README, or anywhere SVG is refused |
+| `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
+| `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
 
 Each is usable by a consumer that knows nothing about this plugin and does no
-parsing at all: `cat .identicon/colour` yields a colour,
-`![](.identicon/icon.svg)` yields an image. That is why they are four files and
-not one — a README cannot address a fragment inside a blob.
+parsing at all: `cat` the colour file and you have a colour,
+`![](.identicon/repository-identicon.svg)` and you have an image. That is why
+they are separate files and not one — a README cannot address a fragment inside
+a blob.
+
+The names repeat the directory on purpose, so a file still says what it is after
+being copied out of it, and the `repository-` prefix leaves room for a project
+to carry a user's mark alongside its own.
 
 **No code is installed into your repository** and it gains no dependency on this
 plugin. An identicon is a constant for a repository; it is derived once.

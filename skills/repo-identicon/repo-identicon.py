@@ -100,25 +100,46 @@ OVERRIDE_FILENAME = ".claude-state-identicon"
 # a listing to find them. Every consumer arrives by a path it was told.
 DIRECTORY = ".identicon"
 
-# Four files, each usable by a consumer that knows nothing about this tool and
-# does no parsing at all. That is the whole design: `cat .identicon/colour`
-# yields a colour, `<img src=".identicon/icon.svg">` yields an image. Rolling
-# them into one file would be readable by every tool that knows the format,
-# which is one tool.
+# Each file is usable by a consumer that knows nothing about this tool and does
+# no parsing at all. That is the whole design: `cat` the colour and you have a
+# colour, point an `<img>` at the SVG and you have an image. Rolling them into
+# one file would be readable by every tool that knows the format, which is one
+# tool.
 #
-# `png.b64` is not a duplicate of `icon.png`. The CLAUDE.md instruction embeds
-# the image as a `data:` URI, which needs exactly these characters and cannot
-# reference a path; a README needs a path and cannot use base64. Two consumers,
-# two forms, one image -- and the tests prove they are the same image.
-B64_NAME = f"{DIRECTORY}/png.b64"
-PNG_NAME = f"{DIRECTORY}/icon.png"
-SVG_NAME = f"{DIRECTORY}/icon.svg"
-COLOUR_NAME = f"{DIRECTORY}/colour"
+# **The filename repeats what the directory already says, deliberately.** The
+# directory is context, and context is exactly what does not travel: the moment
+# one of these is copied out, fetched from a raw URL or dropped into `docs/`, a
+# name like `icon.png` describes nothing. `repository-identicon.png` still says
+# what it is, and says it after the move rather than only before.
+#
+# `repository-` and not just `identicon-` because a project may come to carry
+# more than one mark -- a user's alongside the repository's -- and then the
+# unqualified name is the ambiguous one. Cheap to include now, painful to add
+# later once things point at the short name.
+STEM = "repository-identicon"
 
-# What the artifact was called before it moved into the directory. Removed on
-# install, so a repository does not end up carrying both and no consumer has to
-# guess which one is current.
-SUPERSEDED = ("repository-identicon-png.b64",)
+PNG_NAME = f"{DIRECTORY}/{STEM}.png"
+SVG_NAME = f"{DIRECTORY}/{STEM}.svg"
+COLOUR_NAME = f"{DIRECTORY}/{STEM}.colour"
+
+# Reserved: the text rendering, for clients that display no image at all.
+# TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
+
+# Names this tool has used before, removed on install. A repository carrying
+# both an old artifact and its replacement leaves every consumer guessing which
+# is current, and the stale one goes on looking authoritative forever.
+#
+# The base64 is here rather than among the artifacts: it was the `data:` URI the
+# CLAUDE.md literal needs, in a file, from before there was a real PNG to derive
+# it from. Now there is one, and base64 of that PNG *is* the literal -- so the
+# file was a second copy of the image, free to disagree with the first.
+SUPERSEDED = (
+    "repository-identicon-png.b64",
+    f"{DIRECTORY}/png.b64",
+    f"{DIRECTORY}/icon.png",
+    f"{DIRECTORY}/icon.svg",
+    f"{DIRECTORY}/colour",
+)
 
 INSTRUCTIONS_NAME = "CLAUDE.md"
 
@@ -544,20 +565,28 @@ def installed_cell(root):
     whatever the repository chose, rather than silently reverting it to the
     default and rewriting every artifact plus the CLAUDE.md literal.
 
+    Superseded names are consulted too, and this is not belt and braces: an
+    install that renames the artifacts runs *before* the old ones are removed,
+    so a rename would otherwise destroy the very record it is migrating and
+    quietly reset the repository to the default. That happened once, between one
+    commit and the next, and cost a repository its chosen size without saying so.
+
     Returns None if there is nothing installed, or if what is installed is not
     a size this tool produces -- in which case the caller falls back to the
     default rather than trying to honour a width it cannot reproduce.
     """
-    path = os.path.join(root, PNG_NAME)
-    raw = _read(path, binary=True)
-    if not raw or len(raw) < 24 or raw[:8] != b"\x89PNG\r\n\x1a\n":
-        return None
-    width, height = struct.unpack(">II", raw[16:24])
-    if width != height:
-        return None
-    for cell in CELLS:
-        if canvas(cell) == width:
-            return cell
+    for name in (PNG_NAME, *SUPERSEDED):
+        if not name.endswith(".png"):
+            continue
+        raw = _read(os.path.join(root, name), binary=True)
+        if not raw or len(raw) < 24 or raw[:8] != b"\x89PNG\r\n\x1a\n":
+            continue
+        width, height = struct.unpack(">II", raw[16:24])
+        if width != height:
+            continue
+        for cell in CELLS:
+            if canvas(cell) == width:
+                return cell
     return None
 
 
@@ -584,10 +613,15 @@ usable with no parsing at all:
 
 | file | for |
 |---|---|
-| `{B64_NAME}` | the literal above; a `data:` URI cannot reference a path |
 | `{PNG_NAME}` | a README, or anywhere that refuses SVG |
 | `{SVG_NAME}` | a README on a forge that renders it; anything scalable |
 | `{COLOUR_NAME}` | `#rrggbb`, for a prompt, a badge, or a theme |
+
+Each name repeats the directory on purpose, so that a file still says what it is
+once it has been copied somewhere else.
+
+The literal above is base64 of the PNG, which is the one form a file cannot
+provide: a `data:` URI carries its bytes and cannot reference a path.
 
 Do not edit any of them by hand, including the literal above -- regenerate the
 whole set with `/repo-identicon`.
@@ -628,10 +662,8 @@ def install(path, cell=None):
 
     # Every artifact ends with a newline, so each is a well-formed text file and
     # `$(cat ...)` still yields it clean -- the shell strips exactly one.
-    png = render_png(key, cell)
     artifacts = {
-        B64_NAME: base64.b64encode(png).decode("ascii") + "\n",
-        PNG_NAME: png,
+        PNG_NAME: render_png(key, cell),
         SVG_NAME: render_svg(key, cell),
         COLOUR_NAME: hex_colour(identicon_colour(key)) + "\n",
     }
@@ -792,8 +824,7 @@ def main(argv):
               + ("" if cell else "  (kept from what is installed)"
                  if installed_cell(root) else "  (default)"))
         print(f"under  {root}")
-        for name in (B64_NAME, PNG_NAME, SVG_NAME, COLOUR_NAME,
-                     INSTRUCTIONS_NAME):
+        for name in (PNG_NAME, SVG_NAME, COLOUR_NAME, INSTRUCTIONS_NAME):
             print(f"would write {name}")
         for name in SUPERSEDED:
             if os.path.exists(os.path.join(root, name)):

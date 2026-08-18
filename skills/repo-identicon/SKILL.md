@@ -11,29 +11,39 @@ apart without reading them.
 
 ## What lands in the repository
 
-A `.identicon/` directory holding one mark in four forms, and a section in
+A `.identicon/` directory holding one mark in several forms, and a section in
 `CLAUDE.md` carrying it as an inline markdown image with the instruction to
 emit that line last on every turn.
 
 | file | consumer | why not one of the others |
 |---|---|---|
-| `.identicon/png.b64` | the `CLAUDE.md` literal | a `data:` URI needs the characters, and cannot reference a path |
-| `.identicon/icon.png` | a README; anywhere SVG is refused | base64 in a file is not an image at a path; PyPI and some aggregators strip SVG |
-| `.identicon/icon.svg` | a README on a forge that renders it | scales; a size is declared so `![]()` renders it as an inline mark rather than at column width |
-| `.identicon/colour` | a prompt, a badge, a theme | `#rrggbb` and a newline, so `$(cat …)` is the whole parser |
+| `.identicon/repository-identicon.png` | a README; anywhere SVG is refused | PyPI and some aggregators strip SVG |
+| `.identicon/repository-identicon.svg` | a README on a forge that renders it | scales; a size is declared so `![]()` renders it as an inline mark rather than at column width |
+| `.identicon/repository-identicon.colour` | a prompt, a badge, a theme | `#rrggbb` and a newline, so `$(cat …)` is the whole parser |
 
 Every one is usable by a consumer that knows nothing about this tool and does
-no parsing. That is the design, and it is why these are four files rather than
-one: a combined file would be readable by every tool that knows the format,
-which is one tool. A README cannot address a fragment inside a blob, and
-`![](.identicon/icon.svg)` is the entire integration.
+no parsing. That is the design, and it is why these are separate files rather
+than one: a combined file would be readable by every tool that knows the
+format, which is one tool. A README cannot address a fragment inside a blob,
+and `![](.identicon/repository-identicon.svg)` is the entire integration.
+
+**Each filename repeats the directory deliberately.** The directory is context,
+and context is what does not travel — copied out, fetched from a raw URL or
+dropped into `docs/`, a file called `icon.png` describes nothing. The
+`repository-` prefix anticipates a project carrying more than one mark, a
+user's alongside the repository's, at which point the unqualified name is the
+ambiguous one.
+
+The `CLAUDE.md` literal is base64 of the PNG. There is no file holding it: that
+would be a second copy of one image, free to disagree with the first.
 
 **No code is installed in the target repository** and it gains no dependency on
 this skill. The identicon is a constant for a repository, derived once.
 
-An older layout put a single `repository-identicon-png.b64` at the repository
-root. The installer removes it, because a repository carrying both leaves every
-consumer guessing which is current.
+Earlier layouts used other names — a single `repository-identicon-png.b64` at
+the root, then `icon.png` and friends inside the directory. The installer
+removes any it finds, because a repository carrying both leaves every consumer
+guessing which is current.
 
 ## Offer the README line
 
@@ -41,11 +51,11 @@ The artifacts are inert until something points at them. After installing, offer
 to add the mark to the repository's README:
 
 ```markdown
-![](.identicon/icon.svg)
+![](.identicon/repository-identicon.svg)
 ```
 
-Use the SVG where the forge renders it, `\.identicon/icon.png` where it does
-not. To scale it, the consumer supplies the size — `<img src=".identicon/icon.svg" width="120">` —
+Use the SVG where the forge renders it, the PNG where it does not. To scale it,
+the consumer supplies the size — `<img src=".identicon/repository-identicon.svg" width="120">` —
 which is the right way round, since the default use is an inline mark beside a
 title.
 
