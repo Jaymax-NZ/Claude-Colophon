@@ -139,9 +139,13 @@ TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
 # buys a PNG decoder, a geometry recovery and a set of failure modes about bit
 # depth and filter bytes, in exchange for nothing.
 #
-# Absent, the text form is skipped and everything else still installs. It is the
-# one artifact with a dependency, so it is the one that degrades rather than
-# failing.
+# Absent, the text form is skipped and everything else still installs -- it is
+# the one artifact with a dependency, so it is the one that can be missing
+# without taking the install down with it. That is a packaging property and not
+# a statement about the artifact: for a terminal session the text form is *the*
+# mark, carrying the pattern in octants and the colour in emoji, which is the
+# only way colour reaches a channel that strips ANSI. A plugin shipped without
+# this file is incomplete for the majority case, not merely plainer.
 TEXT_RENDERER = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "text-identicon.py")
 

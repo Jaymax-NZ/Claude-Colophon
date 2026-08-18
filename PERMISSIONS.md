@@ -51,13 +51,17 @@ Bash(python3 -c *)
 
 The mark exists in two forms, because the two clients cannot show the same
 thing: a GUI chat client renders a markdown image, a terminal shows characters.
-Choosing correctly means knowing which client is rendering the reply.
+Neither is a reduced version of the other. The text form carries the whole mark
+— the pattern in octants, the colour in emoji — and it carries the colour in the
+only way a terminal can, since ANSI escapes are stripped from assistant text
+before they ever reach it. Choosing correctly means knowing which client is
+rendering the reply.
 
 **In most sessions this needs no command at all.** The available tools already
 answer it — a client that offers inline rendering, artifacts or a side panel is
 a client that displays images, and one that offers none is not. The instruction
-installed into your repository says to use that first, and to fall back to the
-block form when it is unclear.
+installed into your repository says to use that first, and to prefer the text
+form when it is unclear.
 
 The probe is only for resolving genuine doubt:
 
@@ -72,8 +76,8 @@ line is why this probe exists rather than a simpler instruction to read the
 prompt.
 
 Do not allowlist this if you would rather not — the cost of declining is that
-sessions default to the block form, which is legible everywhere and merely
-plainer than it needs to be in a GUI.
+sessions default to the text form, which is the correct mark for a terminal and
+a legible one anywhere else.
 
 ## What is deliberately not here
 
