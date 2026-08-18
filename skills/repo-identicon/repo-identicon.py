@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """Give a repository an identicon that Claude emits at the end of every turn.
 
-Run once per repository. What lands in the target repository is a text file and
-a markdown block -- no code, no dependency on this script, nothing to keep
+Run once per repository. What lands in the target repository is four data files
+and a markdown block -- no code, no dependency on this script, nothing to keep
 updated. Re-run only if the git remote changes.
 
-    ~/.claude/skills/repo-identicon/repo-identicon.py [PATH]
+    "${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py" [PATH]
 
-Writes `repository-identicon-png.b64` at the repository root, and adds (or
-refreshes) the instruction block in `CLAUDE.md` that carries the same bytes as
-an inline markdown image.
+Writes `.identicon/` at the repository root -- base64 for the transcript
+literal, a raster, a vector and the colour -- and adds (or refreshes) the
+instruction block in `CLAUDE.md` that carries the same image inline.
+
+Shipped as the `repo-identicon` skill of the `claude-colophon` plugin. The
+derivation is specified by the Repository-Identicon standard, whose conformance
+apparatus -- a vendored reference library and its pinned vectors -- deliberately
+stays with the standard rather than travelling here: this file computes a
+constant, and carrying a test suite to do it would be absurd. The two are held
+to each other by a test where the vectors live.
 
 **Why an instruction rather than a hook**, given that a hook would not depend on
 the model choosing to comply. No hook output field can display an image: a

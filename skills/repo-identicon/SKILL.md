@@ -55,7 +55,7 @@ Run the script. It resolves the key, derives the identicon, writes the
 artifacts, and reports what changed:
 
 ```bash
-~/.claude/skills/repo-identicon/repo-identicon.py
+"${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py"
 ```
 
 It takes an optional path argument and defaults to the working directory;
@@ -76,7 +76,7 @@ looking at it. Show them rather than describing it — emit two candidate sizes
 as inline markdown images in your reply and let them pick:
 
 ```bash
-~/.claude/skills/repo-identicon/repo-identicon.py --cell 2 --b64
+"${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py" --cell 2 --b64
 ```
 
 A repository's choice is read back out of its own installed PNG, so re-running
@@ -90,12 +90,21 @@ Useful flags: `--dry-run` (report the key and cell, write nothing), `--key`,
 than the default. An unrecognised flag or an out-of-range `--cell` is refused
 rather than falling through to a real install, so a typo cannot write files.
 
+`${CLAUDE_PLUGIN_ROOT}` is set for a plugin's own files and is the only correct
+way to reach them — the plugin's location on disk is not fixed and is not
+guessable. Quote it, since an install path may contain spaces.
+
 Issue it as a single Bash call with nothing chained to it, so the invocation
-reduces to a reusable prefix rule:
+reduces to a reusable prefix rule. The rule has to name the resolved path
+rather than the variable, because permission matching happens after expansion:
 
 ```
-Bash(~/.claude/skills/repo-identicon/repo-identicon.py:*)
+Bash(~/Code/Projects/Claude-Colophon/skills/repo-identicon/repo-identicon.py:*)
 ```
+
+Tell the user that rule once, on first use, rather than letting them approve the
+same command repeatedly. Where the plugin is installed elsewhere, `claude plugin
+details claude-colophon` reports the location.
 
 ## What the script will and will not do
 
