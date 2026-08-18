@@ -41,6 +41,14 @@ not one — a README cannot address a fragment inside a blob.
 **No code is installed into your repository** and it gains no dependency on this
 plugin. An identicon is a constant for a repository; it is derived once.
 
+## What it will ask to run
+
+Two local commands, both documented with their reasons in
+[PERMISSIONS.md](PERMISSIONS.md): the installer, once per repository, and a read
+of one environment variable, at most once per session and usually not at all.
+No network access, no writes outside the repository you point it at, and no
+hooks.
+
 ## Why an instruction rather than a hook
 
 An instruction depends on the model complying; a hook does not. The hook route

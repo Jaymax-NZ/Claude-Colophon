@@ -95,23 +95,22 @@ way to reach them — the plugin's location on disk is not fixed and is not
 guessable. Quote it, since an install path may contain spaces.
 
 Issue it as a single Bash call with nothing chained to it, so the invocation
-reduces to a reusable prefix rule. The rule has to name the resolved path
-rather than the variable, because permission matching happens after expansion:
+reduces to a reusable prefix rule. The rule has to name the **resolved** path
+rather than the variable, because permission matching happens after expansion —
+so it differs per machine and cannot be quoted from here. `claude plugin details
+claude-colophon` reports the location.
 
-```
-Bash(~/Code/Projects/Claude-Colophon/skills/repo-identicon/repo-identicon.py:*)
-```
-
-Tell the user that rule once, on first use, rather than letting them approve the
-same command repeatedly. Where the plugin is installed elsewhere, `claude plugin
-details claude-colophon` reports the location.
+This is a once-per-repository action, so approving the prompt each time is a
+perfectly reasonable choice and should be offered as one. Do not press for an
+allowlist entry. `PERMISSIONS.md` in the plugin explains what is asked for and
+why; point at it rather than restating it.
 
 ## What the script will and will not do
 
 Worth knowing before approving it, and worth saying to a user who asks:
 
-- It writes exactly two files, both at the repository root, and refuses any
-  path that resolves outside it.
+- It writes into `.identicon/` and `CLAUDE.md`, both at the repository root, and
+  refuses any path that resolves outside it.
 - Both writes go through a temp file and a rename, so an interrupted or crashed
   run leaves the previous `CLAUDE.md` intact rather than truncated.
 - Nothing is written until everything has been read and decided, so a refusal
