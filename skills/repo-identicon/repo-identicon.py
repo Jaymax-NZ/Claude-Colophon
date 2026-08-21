@@ -77,19 +77,6 @@ BORDER = 1
 CELLS = (1, 2, 3, 4, 5)
 DEFAULT_CELL = 3
 
-# **The same mark again with blocks four times the size, for native UIs.**
-# A browser is handed one file and scales it to the display's density, so CSS
-# needs nothing more. A native toolkit picks an asset per scale factor and blits
-# it, and the 1x marks here are 7 to 27 pixels square -- a smudge in a native
-# icon slot.
-#
-# The border stays a separating margin rather than being scaled with the blocks:
-# 2 pixels flat, for the same reason it is 1 flat above. Two rather than one
-# because at these block sizes one disappears, and because it puts the default
-# cell on exactly 64px, which every native icon theme already asks for.
-SCALE = 4
-SCALE_BORDER = 2
-
 
 def canvas(cell):
     """Total pixel side for a cell size: 5 cells plus a border either end.
@@ -99,16 +86,6 @@ def canvas(cell):
     two ways of describing the same canvas cannot disagree.
     """
     return GRID * cell + 2 * BORDER
-
-
-def scaled_canvas(cell):
-    """Total pixel side for the 4x raster of a cell size.
-
-    Not `canvas(SCALE * cell)`: that would carry the one-pixel border up with
-    it, and the border here is 2. Nor is it `SCALE * canvas(cell)`, which would
-    scale the border to 4 and turn a margin into a frame.
-    """
-    return GRID * (SCALE * cell) + 2 * SCALE_BORDER
 
 # The reference fixes both rather than deriving them from the digest.
 SATURATION = 0.7
@@ -148,7 +125,6 @@ DIRECTORY = ".identicon"
 STEM = "repository-identicon"
 
 PNG_NAME = f"{DIRECTORY}/{STEM}.png"
-PNG4X_NAME = f"{DIRECTORY}/{STEM}@{SCALE}x.png"
 SVG_NAME = f"{DIRECTORY}/{STEM}.svg"
 COLOUR_NAME = f"{DIRECTORY}/{STEM}.colour"
 TEXT_NAME = f"{DIRECTORY}/{STEM}.txt"
@@ -453,18 +429,11 @@ def _geometry(size):
     return cell, margin
 
 
-def render_rgba(key, size, geometry=None):
-    """Raw RGBA bytes for a square identicon. Unfilled cells are transparent.
-
-    `geometry` overrides the derivation, and the 4x raster needs it to:
-    `_geometry` recovers the cell from the canvas by dividing by 5.5, which
-    lands back on (cell, border) exactly for the 1x sizes and does not for the
-    4x ones -- an 84px canvas comes back as (15, 4) when it must be (16, 2).
-    Passing it beats widening the heuristic, which the 1x sizes depend on.
-    """
+def render_rgba(key, size):
+    """Raw RGBA bytes for a square identicon. Unfilled cells are transparent."""
     grid = identicon_grid(key)
     red, green, blue = identicon_colour(key)
-    cell, margin = geometry if geometry else _geometry(size)
+    cell, margin = _geometry(size)
 
     back = bytes((0, 0, 0, 0))
     fore = bytes((red, green, blue, 255))
@@ -501,13 +470,6 @@ def encode_png(rgba, width, height):
 def render_png(key, cell=DEFAULT_CELL):
     size = canvas(cell)
     return encode_png(render_rgba(key, size), size, size)
-
-
-def render_png_scaled(key, cell=DEFAULT_CELL):
-    """The 4x raster: same key, same pattern, same colour, bigger blocks."""
-    size = scaled_canvas(cell)
-    return encode_png(render_rgba(key, size, (SCALE * cell, SCALE_BORDER)),
-                      size, size)
 
 
 def hex_colour(rgb):
@@ -697,7 +659,6 @@ usable with no parsing at all:
 | file | for |
 |---|---|
 | `{PNG_NAME}` | a README, or anywhere that refuses SVG |
-| `{PNG4X_NAME}` | a native UI, which picks an asset per scale factor rather than resampling |
 | `{SVG_NAME}` | a README on a forge that renders it; anything scalable |
 | `{COLOUR_NAME}` | `#rrggbb`, for a prompt, a badge, or a theme |
 
@@ -760,7 +721,6 @@ def install(path, cell=None, instruct=True):
     colour = identicon_colour(key)
     artifacts = {
         PNG_NAME: render_png(key, cell),
-        PNG4X_NAME: render_png_scaled(key, cell),
         SVG_NAME: render_svg(key, cell),
         COLOUR_NAME: hex_colour(colour) + "\n",
     }

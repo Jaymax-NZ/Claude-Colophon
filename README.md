@@ -29,7 +29,6 @@ on every turn.
 | file | consumer |
 |---|---|
 | `.identicon/repository-identicon.png` | a README, or anywhere SVG is refused |
-| `.identicon/repository-identicon@4x.png` | a native UI, which picks an asset per scale factor instead of resampling |
 | `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
 | `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
 
