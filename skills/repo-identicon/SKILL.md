@@ -18,6 +18,7 @@ emit that line last on every turn.
 | file | consumer | why not one of the others |
 |---|---|---|
 | `.identicon/repository-identicon.png` | a README; anywhere SVG is refused | PyPI and some aggregators strip SVG |
+| `.identicon/repository-identicon@4x.png` | a native UI — Qt, GTK, a desktop panel | blocks four times the size, border 2px flat; a native toolkit blits a per-scale asset rather than resampling, and the 1x mark is 7–27px |
 | `.identicon/repository-identicon.svg` | a README on a forge that renders it | scales; a size is declared so `![]()` renders it as an inline mark rather than at column width |
 | `.identicon/repository-identicon.colour` | a prompt, a badge, a theme | `#rrggbb` and a newline, so `$(cat …)` is the whole parser |
 
