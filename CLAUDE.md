@@ -1,5 +1,17 @@
+## Name the thing
 
+Never write "the plugin", "the skill", "the script" or "the tool". Here every
+one of those has more than one referent -- three projects, two skills, three
+scripts -- so a bare generic noun costs the reader a lookup, and sometimes
+hands them the wrong object without either of you noticing.
 
+Write the name: Claude Colophon, Repository Identicon, `repo-identicon.py`,
+`text-identicon.py`, `session-tricolour.py`, `.identicon/`. Where a full name
+is heavier than the sentence needs, one adjective in front of the noun does the
+same work -- the *identicon* generator, the *tagging* section, the *vendored*
+renderer -- because the adjective is the half that disambiguates.
+
+Prose, comments, commit messages and replies alike.
 
 ## Tag this session with this repository's tricolour
 

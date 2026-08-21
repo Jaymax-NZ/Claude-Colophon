@@ -1,6 +1,6 @@
 # Permissions
 
-What this plugin causes Claude to run, and why. **Documentation only** — nothing
+What Claude Colophon causes Claude to run, and why. **Documentation only** — nothing
 here is installed or requested automatically. It exists so you can decide before
 approving, and so a prompt is never the first time you learn a tool wanted
 something.
@@ -21,7 +21,7 @@ repository you point them at.
 | when you ask for it | the session-tricolour script | only for session tagging |
 
 Nothing here makes a network call. Nothing reads outside the repository being
-worked on, except the plugin reading its own files.
+worked on, except Claude Colophon reading its own files.
 
 ## 1. The installer
 
@@ -93,11 +93,11 @@ yes/no about whether a remote URL denotes this repository. `--enable` and
 the repository root and nothing else.
 
 **It never renames anything.** Renaming a session is a tool call the model makes
-through whatever session manager the client provides; this script only computes
-the string. That separation is deliberate: the part that can change something
+through whatever session manager the client provides; `session-tricolour.py`
+only computes the string. That separation is deliberate: the part that can change something
 you can see is the part you are already being asked to approve, turn by turn.
 
-Like the installer, the path varies by how the plugin was installed, so this
+Like the installer, the path varies by how Claude Colophon was installed, so this
 rule cannot be published verbatim either.
 
 ## What is deliberately not here
@@ -111,7 +111,7 @@ rule cannot be published verbatim either.
   a machine that is assumed to still be the same machine.
 - **No network permission.** The derivation is a hash of your git remote's
   *name*. Nothing is fetched, and nothing is reported anywhere.
-- **No write access beyond the target repository**, enforced in the script
+- **No write access beyond the target repository**, enforced in `repo-identicon.py`
   rather than merely intended: every path is resolved and checked against the
   repository root before anything is written.
 

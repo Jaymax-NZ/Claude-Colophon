@@ -19,9 +19,9 @@ Three projects, and the boundary between them is the thing most often got wrong
 | **the generator** | `.identicon/`, and nothing else. |
 | **Claude Colophon** | everything in `CLAUDE.md`, and the session name. |
 
-`CLAUDE.md` is this plugin's score. It is where a mark becomes an instruction to
-Claude, which is the whole of what this plugin is for and none of what a
-generator is for. A generator that also wrote instructions would be one you
+`CLAUDE.md` is Claude Colophon's score. It is where a mark becomes an
+instruction to Claude, which is the whole of what Claude Colophon is for and
+none of what a generator is for. A generator that also wrote instructions would be one you
 could not replace without re-deciding how Claude behaves.
 
 That is not hypothetical. The vendored generator is going to be replaced when
@@ -208,8 +208,8 @@ noisiest thing in the transcript.
 
 ## Deferred
 
-- **Take `CLAUDE.md` out of the generator.** The signing block is this plugin's
-  instruction, living in the generator's file. Doing it now would collide with
+- **Take `CLAUDE.md` out of the generator.** The signing block is Claude
+  Colophon's instruction, living in the generator's file. Doing it now would collide with
   the file split already under way there, so it waits — but nothing is added to
   that file in the meantime, and the tagging section is written by this
   feature's own tooling from the start rather than being put in the wrong place

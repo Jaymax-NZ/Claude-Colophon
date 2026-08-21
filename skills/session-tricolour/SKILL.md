@@ -8,8 +8,8 @@ description: Prefix a Claude session's name with its repository's tricolour -- t
 The identicon signs a turn; this signs a session. Same mark, same question --
 which project is this -- asked in the other place it gets asked.
 
-`docs/session-tricolour-spec.md` in this plugin is the specification. This file
-is the procedure.
+`docs/session-tricolour-spec.md` is the specification. This file is the
+procedure.
 
 ## The rule that outranks everything else here
 
@@ -93,7 +93,7 @@ if it is committed.
 `--enable` and `--disable` are the only things that write or remove this
 section, which is what makes both the opt-in and the opt-out durable.
 
-`CLAUDE.md` belongs to this plugin, not to the generator. The generator still
+`CLAUDE.md` belongs to Claude Colophon, not to the generator. The generator still
 writes a signing block there today — that is a misplacement owed an extraction,
 not a licence to add more. It swaps only its own literal, so it leaves this
 section alone in the meantime. Never put an instruction for Claude into the
@@ -133,5 +133,5 @@ The triple currently comes from the last three characters of the last line of
 `.identicon/repository-identicon.txt`, because it does not yet have a file of
 its own. `--triple` already prefers `.identicon/repository-identicon.tricolour`
 and will use it the moment the generator starts writing it. Keep reading through
-the script rather than opening either file yourself, and that change costs
+`session-tricolour.py` rather than opening either file yourself, and that change costs
 nothing here.

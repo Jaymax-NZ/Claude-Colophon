@@ -75,7 +75,7 @@ OPTED_OUT = 4
 
 
 def _vendored(relative, name):
-    """Load a sibling of this file within the plugin, or None if it is absent.
+    """Load a sibling of this file within Claude Colophon, or None if absent.
 
     A plugin is copied whole and has no dependency mechanism, so the pieces
     reach each other by path. Absence is survivable for some callers and fatal
@@ -115,7 +115,7 @@ def palette_characters():
     if _TEXT is None:
         raise SystemExit(
             "cannot recognise a tricolour: the vendored text renderer is "
-            "missing from the plugin, and its palette is the only definition "
+            "missing from Claude Colophon, and its palette is the only "
             "of which characters are squares")
     return {entry[0] for entry in _TEXT.PALETTE}
 
@@ -226,7 +226,7 @@ def matches(url, root):
     """Whether `url` denotes the repository at `root`."""
     if _GENERATOR is None:
         raise SystemExit("cannot match sessions: the generator is missing from "
-                         "the plugin, and its normalisation is the definition "
+                         "Claude Colophon, and its normalisation is the definition "
                          "of when two remotes are one repository")
     mine = _GENERATOR.repo_remote_url(root)
     if not mine:
@@ -309,10 +309,12 @@ def enable(root):
             existing = handle.read()
     if _section_bounds(existing):
         return "already opted in"
-    separator = "" if not existing else ("\n" if existing.endswith("\n\n")
-                                         else "\n\n" if existing.endswith("\n")
-                                         else "\n\n")
-    _write(root, existing + separator + SECTION)
+    # Exactly one blank line between whatever was there and the section, however
+    # many trailing newlines the file happened to end with. Getting this wrong
+    # is invisible until someone removes the section and adds it back, and then
+    # the file has drifted by a blank line for no reason anyone can see.
+    body = existing.rstrip("\n")
+    _write(root, f"{body}\n\n{SECTION}" if body else SECTION)
     return f"opted in: added the section to {INSTRUCTIONS_NAME}"
 
 
@@ -327,7 +329,10 @@ def disable(root):
     if not bounds:
         return "already opted out"
     start, end = bounds
-    _write(root, (existing[:start].rstrip("\n") + "\n" + existing[end:]).rstrip("\n") + "\n")
+    remaining = (existing[:start].rstrip("\n") + "\n" + existing[end:]).strip("\n")
+    # An empty file rather than one holding a single blank line, for the
+    # repository whose CLAUDE.md was only ever this section.
+    _write(root, f"{remaining}\n" if remaining else "")
     return f"opted out: removed the section from {INSTRUCTIONS_NAME}"
 
 
@@ -374,6 +379,32 @@ def selftest():
         assert not opted_in(root)
         assert "## After" in open(os.path.join(root, INSTRUCTIONS_NAME)).read()
         assert disable(root) == "already opted out"
+
+    # Removing and re-adding leaves the file exactly as it was, whatever it
+    # ended with. Someone else's prose is in there, and drifting it by a blank
+    # line every time is a diff they have to read and cannot learn anything
+    # from.
+    # A CLAUDE.md that was only ever this section comes back empty, not as a
+    # file holding one blank line.
+    with tempfile.TemporaryDirectory() as root:
+        path = os.path.join(root, INSTRUCTIONS_NAME)
+        enable(root)
+        assert open(path).read() == SECTION
+        disable(root)
+        assert open(path).read() == ""
+        enable(root)
+        assert open(path).read() == SECTION
+
+    for ending in ("Prose.", "Prose.\n", "Prose.\n\n", "Prose.\n\n\n"):
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, INSTRUCTIONS_NAME)
+            with open(path, "w") as handle:
+                handle.write(f"# Project\n\n{ending}")
+            enable(root)
+            before = open(path).read()
+            disable(root)
+            enable(root)
+            assert open(path).read() == before, ending
 
     # Reading is a read: with no artifacts there is no tricolour, and that is
     # an answer rather than a failure.

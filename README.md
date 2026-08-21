@@ -32,7 +32,7 @@ on every turn.
 | `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
 | `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
 
-Each is usable by a consumer that knows nothing about this plugin and does no
+Each is usable by a consumer that knows nothing about Claude Colophon and no
 parsing at all: `cat` the colour file and you have a colour,
 `![](.identicon/repository-identicon.svg)` and you have an image. That is why
 they are separate files and not one — a README cannot address a fragment inside
@@ -58,8 +58,8 @@ with the identicon's three coloured squares:
 A prefix rather than a suffix, because a list of session names truncates on the
 right. The squares are read from `.identicon/` and never recomputed — one
 repository, one mark, one thing that produces it. A repository with no
-`.identicon/` is never tagged, and removing the section the skill writes into
-`CLAUDE.md` turns it off for good: the instruction is its own switch.
+`.identicon/` is never tagged, and removing the section `session-tricolour`
+writes into `CLAUDE.md` turns it off for good: the instruction is its own switch.
 
 Specified in [docs/session-tricolour-spec.md](docs/session-tricolour-spec.md).
 
