@@ -246,10 +246,12 @@ you notice it missing, make this session's name begin with this repository's
 three coloured squares, so that a list of sessions can be told apart without
 being read.
 
-The squares are the whole of `{TRICOLOUR_NAME}` if that file exists, and
-otherwise the last three characters of the last line of `{TEXT_NAME}`. Read
-them from there. Do not work them out from the colour, the remote, or anything
-else: one repository, one mark, one thing that produces it.
+The squares are the whole of
+`{TRICOLOUR_NAME}` if that file exists,
+and otherwise the last three characters of the last line of
+`{TEXT_NAME}`.
+Read them from there. Do not work them out from the colour, the remote, or
+anything else: one repository, one mark, one thing that produces it.
 
 Then, if this client gives you a tool that can rename a session:
 
