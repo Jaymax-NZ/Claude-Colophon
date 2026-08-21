@@ -60,7 +60,7 @@ at all, so it is both the turn most likely to lose the mark and the one where
 the reader most needs it: they are being asked to stop and decide, and which
 project is asking is part of the question.
 
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAAKklEQVR42mNgGAVYwU21Hf+xYZLUDB5DcCkmRnwQGoLLv8TgQWjIKEABABk3DHJzxKS5AAAAAElFTkSuQmCC)
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAYAAABzwahEAAAAXklEQVR42u3WsQ0AIAhFQadx/9JVnEanwHzJvYSWcB1jSJIkSZLC2nOdiom/ARwcHBwcHBwc/Bd41YEJe8HBwcHBwcHBwVvAq/7khAEHBwcHBwcHB28BlyRJkiTpbRftzRkVxmLiiAAAAABJRU5ErkJggg==)
 
 It is a PNG of this repository's identicon: a 5x5 grid inside a one-pixel
 border, derived from the repository's identity rather than from its path, so it
