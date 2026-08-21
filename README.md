@@ -45,6 +45,24 @@ to carry a user's mark alongside its own.
 **No code is installed into your repository** and it gains no dependency on this
 plugin. An identicon is a constant for a repository; it is derived once.
 
+## Session names, too
+
+The same mark, in the one other place the question gets asked. `/session-tricolour`
+opts a repository in to prefixing the name of every Claude session working in it
+with the identicon's three coloured squares:
+
+```
+🟪🟪🟥 Fix the parser
+```
+
+A prefix rather than a suffix, because a list of session names truncates on the
+right. The squares are read from `.identicon/` and never recomputed — one
+repository, one mark, one thing that produces it. A repository with no
+`.identicon/` is never tagged, and removing the section the skill writes into
+`CLAUDE.md` turns it off for good: the instruction is its own switch.
+
+Specified in [docs/session-tricolour-spec.md](docs/session-tricolour-spec.md).
+
 ## What it will ask to run
 
 Two local commands, both documented with their reasons in

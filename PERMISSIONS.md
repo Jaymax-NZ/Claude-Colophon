@@ -11,13 +11,14 @@ authorise its own code, installation would be the entire attack surface.
 
 ## Summary
 
-Two commands, both local, both read-only with respect to anything outside the
+Three commands, all local, all read-only with respect to anything outside the
 repository you point them at.
 
 | when | what runs | needed? |
 |---|---|---|
 | once per repository | the installer script | yes, to install at all |
 | once per session | a read of one environment variable | only as a tiebreak, see below |
+| when you ask for it | the session-tricolour script | only for session tagging |
 
 Nothing here makes a network call. Nothing reads outside the repository being
 worked on, except the plugin reading its own files.
@@ -79,12 +80,35 @@ Do not allowlist this if you would rather not — the cost of declining is that
 sessions default to the text form, which is the correct mark for a terminal and
 a legible one anywhere else.
 
+## 3. The session-tricolour script
+
+```
+Bash(<plugin path>/skills/session-tricolour/session-tricolour.py:*)
+```
+
+Run only if you use `/session-tricolour`. It reads `.identicon/` and prints
+strings — a tricolour, a session name with the tricolour added or removed, or a
+yes/no about whether a remote URL denotes this repository. `--enable` and
+`--disable` are the two that write, and they write one section of `CLAUDE.md` at
+the repository root and nothing else.
+
+**It never renames anything.** Renaming a session is a tool call the model makes
+through whatever session manager the client provides; this script only computes
+the string. That separation is deliberate: the part that can change something
+you can see is the part you are already being asked to approve, turn by turn.
+
+Like the installer, the path varies by how the plugin was installed, so this
+rule cannot be published verbatim either.
+
 ## What is deliberately not here
 
 - **No `SessionStart` hook.** It was designed and rejected. A hook would remove
   the probe, at the cost of running in every session in every repository,
   including those with no identicon, to answer a question most sessions can
   already answer for free.
+- **No scheduled task, no cron, no daemon.** Session tagging refreshes when you
+  ask it to. A schedule would be a process outside this arrangement, running on
+  a machine that is assumed to still be the same machine.
 - **No network permission.** The derivation is a hash of your git remote's
   *name*. Nothing is fetched, and nothing is reported anywhere.
 - **No write access beyond the target repository**, enforced in the script
