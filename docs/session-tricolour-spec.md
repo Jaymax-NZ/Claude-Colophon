@@ -8,6 +8,30 @@ The identicon signs a *turn*; this signs a *session*. They answer the same
 question — which project is this — in the two places it gets asked, and they are
 the same mark in both.
 
+## Whose score is whose
+
+Three projects, and the boundary between them is the thing most often got wrong
+— including by the first draft of this document.
+
+| project | writes |
+|---|---|
+| **Repository Identicon** | the standard: the key, the derivation, the conformance vectors. Nothing in your repository. |
+| **the generator** | `.identicon/`, and nothing else. |
+| **Claude Colophon** | everything in `CLAUDE.md`, and the session name. |
+
+`CLAUDE.md` is this plugin's score. It is where a mark becomes an instruction to
+Claude, which is the whole of what this plugin is for and none of what a
+generator is for. A generator that also wrote instructions would be one you
+could not replace without re-deciding how Claude behaves.
+
+That is not hypothetical. The vendored generator is going to be replaced when
+the tricolour becomes a file of its own, and anything of ours entangled in it is
+an entanglement to be undone every single time.
+
+**Today `repo-identicon.py` does write the signing block into `CLAUDE.md`.** That
+is the misplacement rather than the precedent: it is owed an extraction, and
+until then nothing new goes near it.
+
 ## The one rule everything else follows from
 
 **`.identicon/` is the only source of the tricolour. Nothing computes it.**
@@ -59,9 +83,11 @@ A repository that carries identicon artifacts but not the tagging section is the
 supported way to have the mark without the session names — which is the case a
 switch exists for.
 
-Removing the section survives a re-run of the generator, because the generator
-refreshes a block by swapping its literal and leaves surrounding prose alone. An
-opt-out is therefore durable without anything having to remember it.
+An opt-out is durable because nothing rewrites the section: this feature's own
+tooling is the only thing that writes or removes it. Today's generator, which
+still carries a signing block of its own, swaps only that block's literal and
+leaves other prose alone — so it does not disturb this section in the meantime,
+and will not be in `CLAUDE.md` at all once the extraction above is done.
 
 ## Placement and format
 
@@ -182,8 +208,12 @@ noisiest thing in the transcript.
 
 ## Deferred
 
-- The generator gains `--no-session-tag`, and writes the tagging section by
-  default, once the tricolour is a file of its own. Until then the section is
-  written and removed by this feature's own tooling, and the generator is not
-  touched — it is about to change underneath us, and two edits racing on one
-  file is how a source of truth stops being one.
+- **Take `CLAUDE.md` out of the generator.** The signing block is this plugin's
+  instruction, living in the generator's file. Doing it now would collide with
+  the file split already under way there, so it waits — but nothing is added to
+  that file in the meantime, and the tagging section is written by this
+  feature's own tooling from the start rather than being put in the wrong place
+  and moved later.
+
+The switch is `--enable` and `--disable` here, and does not become a flag on the
+generator. A generator has no opinion about whether Claude renames a session.

@@ -90,9 +90,14 @@ if it is committed.
 `--enable` writes the section. It refuses if there is no identicon: run
 `/repo-identicon` first, since there is no mark to tag with.
 
-The section survives a re-run of the generator, which refreshes its own block by
-swapping the literal and leaves other prose alone. So an opt-out is durable, and
-so is an opt-in.
+`--enable` and `--disable` are the only things that write or remove this
+section, which is what makes both the opt-in and the opt-out durable.
+
+`CLAUDE.md` belongs to this plugin, not to the generator. The generator still
+writes a signing block there today — that is a misplacement owed an extraction,
+not a licence to add more. It swaps only its own literal, so it leaves this
+section alone in the meantime. Never put an instruction for Claude into the
+generator.
 
 ## Reapplying
 

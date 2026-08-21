@@ -37,6 +37,7 @@ Standard library only.
 import importlib.util
 import os
 import re
+import subprocess
 import sys
 
 # --------------------------------------------------------------------------
@@ -95,8 +96,16 @@ def _vendored(relative, name):
 _TEXT = _vendored(os.path.join("..", "repo-identicon", "text-identicon.py"),
                   "text_identicon")
 
-# The generator, for normalising a remote URL when matching sessions to this
-# repository, and for its atomic write. Reuse, not re-implementation.
+# The generator, for identity resolution and nothing else: which remote names
+# this repository, and how two spellings of one remote collapse to one key.
+# Both are the standard's answers to "are these the same repository", and a
+# second implementation of either is a second answer -- so they are shared.
+#
+# Nothing else is taken from it. Not its atomic write, not its git helpers,
+# however convenient: it is a vendored copy that will be replaced wholesale when
+# the tricolour becomes a file of its own, and every borrowed private is an
+# entanglement to be undone on that day. Couple to the standard, never to the
+# mechanics of whoever currently implements it.
 _GENERATOR = _vendored(os.path.join("..", "repo-identicon", "repo-identicon.py"),
                        "repo_identicon")
 
@@ -118,11 +127,13 @@ def palette_characters():
 def repository_root(path=None):
     """The repository root containing `path`, or `path` itself outside one."""
     start = os.path.abspath(path or os.getcwd())
-    if _GENERATOR is not None:
-        top = _GENERATOR.repo_toplevel(start)
-        if top:
-            return top
-    return start
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                             cwd=start, capture_output=True, text=True,
+                             check=False, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return start
+    return top.stdout.strip() if top.returncode == 0 else start
 
 
 def read_tricolour(root):
@@ -273,12 +284,18 @@ def _section_bounds(text):
 
 
 def _write(root, text):
+    """Replace CLAUDE.md, via a temporary file and a rename.
+
+    The rename is the point: an interrupted run leaves the previous file whole
+    rather than truncated. Someone else\'s prose is in there.
+    """
     path = os.path.join(root, INSTRUCTIONS_NAME)
-    if _GENERATOR is not None:
-        _GENERATOR._write_atomically(path, text.encode("utf-8"))
-    else:
-        with open(path, "w", encoding="utf-8") as handle:
-            handle.write(text)
+    temporary = f"{path}.session-tricolour.tmp"
+    with open(temporary, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
 
 
 def enable(root):
