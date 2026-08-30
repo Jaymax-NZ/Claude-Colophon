@@ -28,10 +28,19 @@ worked on, except the plugin reading its own files.
 Bash(<plugin path>/skills/repo-identicon/repo-identicon.py:*)
 ```
 
-Run once per repository, when you invoke `/repo-identicon`. Writes `.identicon/`
-and a section in `CLAUDE.md`, both at the repository root, and refuses any path
-that resolves outside it. It shells out only to read-only git queries
-(`rev-parse --show-toplevel`, `remote get-url`) and never mutates git state.
+Run once per repository, when you invoke `/repo-identicon`. It writes one file
+itself — a section in `CLAUDE.md` at the repository root — and refuses any path
+that resolves outside it.
+
+**It runs a second program**: `repository-identicon`, the generator, which is a
+prerequisite of this plugin and writes the `.identicon/` directory. That program
+is not part of this plugin and carries its own documentation; a rule approving
+the installer approves it launching the generator too. It is found on your
+`PATH`, or in a sibling checkout during development, and nowhere else — the
+plugin does not download it.
+
+Its only other subprocess is a read-only `git rev-parse --show-toplevel`. It
+never mutates git state.
 
 **The path is not fixed, so this rule cannot be published verbatim.** A plugin's
 location on disk varies by how it was installed. Find yours with:
@@ -86,7 +95,8 @@ a legible one anywhere else.
   including those with no identicon, to answer a question most sessions can
   already answer for free.
 - **No network permission.** The derivation is a hash of your git remote's
-  *name*. Nothing is fetched, and nothing is reported anywhere.
+  *name*. Nothing is fetched, and nothing is reported anywhere. The generator is
+  a prerequisite you install yourself; this plugin never retrieves it.
 - **No write access beyond the target repository**, enforced in the script
   rather than merely intended: every path is resolved and checked against the
   repository root before anything is written.

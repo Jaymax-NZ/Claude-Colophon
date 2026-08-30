@@ -9,96 +9,46 @@ Install a per-repository identicon that gets emitted as the last line of every
 response, so that several Claude windows open on different projects can be told
 apart without reading them.
 
-## What lands in the repository
+## Two tools, and which one owns what
 
-A `.identicon/` directory holding one mark in several forms, and a section in
-`CLAUDE.md` carrying it as an inline markdown image with the instruction to
-emit that line last on every turn.
+**Repository-Identicon** is the standard and its reference implementation. It
+derives the identicon and writes every artifact under `.identicon/`. It is a
+prerequisite: this skill does not carry a second copy of the derivation, and
+will not silently fall back to one.
 
-| file | consumer | why not one of the others |
-|---|---|---|
-| `.identicon/repository-identicon.png` | a README; anywhere SVG is refused | PyPI and some aggregators strip SVG |
-| `.identicon/repository-identicon.svg` | a README on a forge that renders it | scales; a size is declared so `![]()` renders it as an inline mark rather than at column width |
-| `.identicon/repository-identicon.colour` | a prompt, a badge, a theme | `#rrggbb` and a newline, so `$(cat …)` is the whole parser |
+**This skill** runs that generator and then does the one thing it does not —
+places or refreshes the inline `data:` image in `CLAUDE.md`. A `data:` URI
+carries bytes and cannot reference a path, so it is the one form the artifact
+directory cannot supply.
 
-Every one is usable by a consumer that knows nothing about this tool and does
-no parsing. That is the design, and it is why these are separate files rather
-than one: a combined file would be readable by every tool that knows the
-format, which is one tool. A README cannot address a fragment inside a blob,
-and `![](.identicon/repository-identicon.svg)` is the entire integration.
-
-**Each filename repeats the directory deliberately.** The directory is context,
-and context is what does not travel — copied out, fetched from a raw URL or
-dropped into `docs/`, a file called `icon.png` describes nothing. The
-`repository-` prefix anticipates a project carrying more than one mark, a
-user's alongside the repository's, at which point the unqualified name is the
-ambiguous one.
-
-The `CLAUDE.md` literal is base64 of the PNG. There is no file holding it: that
-would be a second copy of one image, free to disagree with the first.
-
-**No code is installed in the target repository** and it gains no dependency on
-this skill. The identicon is a constant for a repository, derived once.
-
-Earlier layouts used other names — a single `repository-identicon-png.b64` at
-the root, then `icon.png` and friends inside the directory. The installer
-removes any it finds, because a repository carrying both leaves every consumer
-guessing which is current.
-
-## Offer the README line
-
-The artifacts are inert until something points at them. After installing, offer
-to add the mark to the repository's README:
-
-```markdown
-![](.identicon/repository-identicon.svg)
-```
-
-Use the SVG where the forge renders it, the PNG where it does not. To scale it,
-the consumer supplies the size — `<img src=".identicon/repository-identicon.svg" width="120">` —
-which is the right way round, since the default use is an inline mark beside a
-title.
+If the generator is missing, the script says so and stops. Relay that rather
+than working around it; a mark derived by anything else is a different mark.
 
 ## Doing it
 
-Run the script. It resolves the key, derives the identicon, writes the
-artifacts, and reports what changed:
+One command. It runs the generator against the repository, then updates the
+literal:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py"
 ```
 
-It takes an optional path argument and defaults to the working directory;
-either way it writes at the repository root, so running it from a subdirectory
-is fine. It is idempotent — a second run on an unchanged repository writes
-nothing and says so.
+It takes an optional path and defaults to the working directory; either way it
+writes at the repository root, so running it from a subdirectory is fine.
 
-## The one choice worth offering
+`--no-instruct` refreshes an existing literal but adds none — for a repository
+that wants the artifacts without asking the model to sign every turn.
+`--dry-run` reports what would change and writes nothing.
 
-**How heavy the mark sits beside a line of text**, set by the pixel size of one
-grid square: `--cell 1` through `--cell 5`, defaulting to 3. Each gives a canvas
-that divides exactly — 7, 12, 17, 22 or 27 pixels square.
-
-Don't interrogate the user about it on a first install; the default is chosen
-and fine. Offer it once the mark is in place and they can see it, since this is
-a judgement about how something looks and nobody has an opinion until they are
-looking at it. Show them rather than describing it — emit two candidate sizes
-as inline markdown images in your reply and let them pick:
+**Generator flags go after `--`**, and are forwarded untouched:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py" --cell 2 --b64
+"${CLAUDE_PLUGIN_ROOT}/skills/repo-identicon/repo-identicon.py" -- --block 5
 ```
 
-A repository's choice is read back out of its own installed PNG, so re-running
-never silently resizes a mark someone settled on. Pass `--cell` only to change
-it. Changing it rewrites the `CLAUDE.md` literal and three of the four
-artifacts; the colour is unaffected.
-
-Useful flags: `--dry-run` (report the key and cell, write nothing), `--key`,
-`--b64`, `--svg`, `--colour`, `--png` (raw bytes to stdout). All of them honour
-`--cell`, and without it they preview the repository's own current size rather
-than the default. An unrecognised flag or an out-of-range `--cell` is refused
-rather than falling through to a real install, so a typo cannot write files.
+That is how to reach `--block`, `--seed`, `--remap` and the rest. An
+unrecognised flag *before* the separator is refused rather than falling through
+to a real run, so a typo cannot write files.
 
 `${CLAUDE_PLUGIN_ROOT}` is set for a plugin's own files and is the only correct
 way to reach them — the plugin's location on disk is not fixed and is not
@@ -115,46 +65,56 @@ perfectly reasonable choice and should be offered as one. Do not press for an
 allowlist entry. `PERMISSIONS.md` in the plugin explains what is asked for and
 why; point at it rather than restating it.
 
+## Read the generator's report before declaring success
+
+The generator prints the seed, how it obtained it, and the colour, then lists
+every file it wrote or left alone. Two things in that output matter:
+
+- **A refusal is not a failure to route around.** It stops for reasons this
+  skill has no business second-guessing — a mapping version it will not draw, a
+  path outside a repository — and each refusal carries its own remedy. Pass the
+  remedy on.
+- **A key that is not portable.** If the seed came from a path rather than a
+  remote or a committed override, the mark changes identity when the repository
+  is cloned to another machine **or opened in a git worktree** — and the desktop
+  app gives every parallel session its own worktree, which would give each
+  parallel session in one project a different mark, precisely inverting what the
+  identicon is for. Offer to add a remote, or to commit a file naming a stable
+  seed.
+
+## Offer the README line
+
+The artifacts are inert until something points at them. After installing, offer
+to add the mark to the repository's README:
+
+```markdown
+![](.identicon/repository-identicon.svg)
+```
+
+Use the SVG where the forge renders it, the PNG where it does not. To scale it,
+the consumer supplies the size — `<img src=".identicon/repository-identicon.svg" width="120">` —
+which is the right way round, since the default use is an inline mark beside a
+title.
+
 ## What the script will and will not do
 
 Worth knowing before approving it, and worth saying to a user who asks:
 
-- It writes into `.identicon/` and `CLAUDE.md`, both at the repository root, and
-  refuses any path that resolves outside it.
-- Both writes go through a temp file and a rename, so an interrupted or crashed
+- It writes exactly one file itself: `CLAUDE.md`, at the repository root, and
+  refuses any path that resolves outside it. Everything under `.identicon/` is
+  written by the generator.
+- That write goes through a temp file and a rename, so an interrupted or crashed
   run leaves the previous `CLAUDE.md` intact rather than truncated.
-- Nothing is written until everything has been read and decided, so a refusal
-  leaves the repository exactly as it was found.
-- The only subprocesses are read-only git queries — `rev-parse --show-toplevel`,
-  `remote get-url`. It never mutates git state, never touches the index or a
+- Its subprocesses are the generator and a read-only `git rev-parse
+  --show-toplevel`. It never mutates git state, never touches the index or a
   branch, and never commits.
-- No network access, and nothing outside the target repository is read or
-  written.
-- It is idempotent: a second run on an unchanged repository writes nothing.
+- No network access, and nothing outside the target repository is written.
+- An undecodable `CLAUDE.md` is an error, not an absent one — appending a fresh
+  block over it would destroy whatever was actually in it.
 
-Then tell the user what to commit — both files, together. Committing one
-without the other leaves the repository inconsistent with itself, and the
-identicon is only portable across clones if it is committed.
-
-## Read the reported source before declaring success
-
-The script prints which source the key came from. Only two of them survive a
-clone:
-
-| source | key | portable |
-|---|---|---|
-| `override` | a committed `.repository-identicon` at the root | yes |
-| `remote` | `host/owner/repo` from the git remote | **yes** |
-| `toplevel` | the repository root path | no |
-| `path` | the directory itself, outside a repository | no |
-
-On `toplevel` or `path` the script warns, and that warning is worth relaying
-rather than passing over: a path-keyed identicon changes identity when the
-repository is cloned to another machine **or opened in a git worktree**, and
-the desktop app gives every parallel session its own worktree — which would
-give each parallel session in one project a different mark, precisely
-inverting what the identicon is for. Offer to add a remote, or to commit a
-one-line `.repository-identicon` naming a stable key.
+Then tell the user what to commit — `.identicon/` and `CLAUDE.md`, together.
+Committing one without the other leaves the repository inconsistent with itself,
+and the identicon is only portable across clones if it is committed.
 
 ## When it is already installed
 
@@ -176,10 +136,10 @@ which was tried and produces `Stop says: ![](data:...)` under every turn.
 
 ## Where the derivation is specified
 
-`~/Code/Projects/Claude-State-Panel` — `docs/project-identicon-spec.md` for the
-key and the rendering, with the pattern and colour conforming to
-stewartlord/identicon.js, vendored there alongside pinned test vectors. That
-apparatus stays in that repository, where it is checked; this script carries
-only the derivation. The two are proven to agree because that repository's own
-identicon is produced by this script and its test suite compares the committed
-literal against a fresh derivation from its full implementation.
+`~/Code/Projects/Repository-Identicon` — `SPEC.md` for the key and the
+rendering, with the pattern and colour conforming to stewartlord/identicon.js,
+vendored there alongside pinned test vectors.
+
+Nothing about the derivation is specified, implemented or tested here. That is
+the point: this plugin used to carry a second copy, and two implementations of
+one constant are free to drift with nothing to report that they have.
