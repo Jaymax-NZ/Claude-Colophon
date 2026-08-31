@@ -11,12 +11,13 @@ authorise its own code, installation would be the entire attack surface.
 
 ## Summary
 
-Two commands, both local, both read-only with respect to anything outside the
+Three commands, all local, all read-only with respect to anything outside the
 repository you point them at.
 
 | when | what runs | needed? |
 |---|---|---|
 | once per repository | the installer script | yes, to install at all |
+| when `/tricolour` runs | the session-membership helper | yes, for the session title |
 | once per session | a read of one environment variable | only as a tiebreak, see below |
 
 Nothing here makes a network call. Nothing reads outside the repository being
@@ -52,7 +53,22 @@ claude plugin details claude-colophon
 If you would rather not allowlist it at all, approving the prompt once per
 repository is a reasonable trade — it is genuinely a once-per-repository action.
 
-## 2. The render-target probe
+## 2. The session-membership helper
+
+```
+Bash(<plugin path>/skills/tricolour/tricolour.py:*)
+```
+
+Run by `/tricolour`. It reads `.identicon/repository-identicon.tricolour` for
+the current repository and for each working directory you pass it, and prints
+which ones carry the same triple. It shells out only to `git rev-parse
+--show-toplevel`, **writes nothing at all**, and makes no network call.
+
+Renaming the sessions is not done by this script and cannot be: setting a title
+goes through the desktop app's own session-management tools, which exist only
+inside a session. A shell command has no route to them.
+
+## 3. The render-target probe
 
 ```
 Bash(python3 -c *)

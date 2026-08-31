@@ -19,7 +19,14 @@ Packaging -- how a user who installed only the plugin obtains the generator --
 is deliberately unresolved. For now the generator is a prerequisite and its
 absence is a clear error rather than a silent fallback to a second derivation.
 
-    repo-identicon.py [PATH] [--no-instruct] [--dry-run] [-- GENERATOR ARGS]
+    repo-identicon.py [PATH] [--no-instruct] [--dry-run]
+                      [--session-title | --no-session-title]
+                      [-- GENERATOR ARGS]
+
+`--session-title` adds an opt-in section asking Claude to carry the identicon
+triple in the session title as well; `--no-session-title` removes it. Neither
+is the default, because a re-run exists to pick up a changed mark and must not
+turn a separate behaviour on or off on the way past.
 
 `--` forwards the remainder to the generator untouched, so `--block`, `--seed`,
 `--remap` and the rest are reachable without being re-declared here.
@@ -87,6 +94,32 @@ PNG_NAME = f"{DIRECTORY}/{STEM}.png"
 INSTRUCTIONS_NAME = "CLAUDE.md"
 
 MARKDOWN_IMAGE = re.compile(r"!\[\]\(data:image/png;base64,[A-Za-z0-9+/=]+\)")
+
+# The session-title instruction, which is opt-in and separate from the turn
+# mark. Emitting an image at the end of a reply changes nothing outside the
+# conversation; renaming sessions changes what the user sees in their session
+# list, including sessions they are not looking at. The second is not implied by
+# wanting the first, so it is not installed by wanting the first.
+TITLE_HEADING = "## Carry the identicon in the session title"
+
+TITLE_INSTRUCTION = f"""{TITLE_HEADING}
+
+On an early turn, run `/tricolour`. It puts this repository's identicon triple
+at the front of this session's title, and of every other open session on this
+repository, so that the session list is scannable by project rather than by
+reading each row.
+
+The triple is the whole mark for a single line: a session title cannot hold the
+5x5 pattern, which needs two.
+
+Opt out by deleting this section. Nothing regenerates it -- `--session-title`
+adds it and `--no-session-title` removes it, and neither is the default.
+"""
+
+# From the heading to the next one at the same level, or to the end. Written as
+# a lookahead so the following section's heading is not consumed with it.
+TITLE_SECTION = re.compile(
+    r"\n*" + re.escape(TITLE_HEADING) + r".*?(?=\n## |\Z)", re.S)
 
 
 # --------------------------------------------------------------------------
@@ -227,7 +260,7 @@ deterministic. This is the second of the two, chosen knowingly.
 """
 
 
-def instruct(root, literal, place=True):
+def instruct(root, literal, place=True, title=None):
     """Place or refresh the literal in CLAUDE.md. Returns what changed.
 
     An existing block is refreshed *in place* by swapping the one literal, so a
@@ -238,6 +271,11 @@ def instruct(root, literal, place=True):
     withdrawing an instruction a repository has committed is not something to
     do as a side effect either -- so an existing block is kept current, and an
     absent one stays absent.
+
+    `title` is True to add the session-title section, False to remove it, and
+    None to leave whatever is there. None is the default because a re-run
+    exists to pick up a changed mark, and must not quietly turn a behaviour on
+    or off that the repository decided about separately.
     """
     instructions = _within(root, os.path.join(root, INSTRUCTIONS_NAME))
     text = _read(instructions) or ""
@@ -257,6 +295,14 @@ def instruct(root, literal, place=True):
         header = f"# {os.path.basename(root)}\n\n" if not text else ""
         updated = text + separator + header + block_for(literal)
 
+    present = TITLE_SECTION.search(updated) is not None
+    if title is True and not present:
+        joiner = "" if updated.endswith("\n\n") else (
+            "\n" if updated.endswith("\n") else "\n\n")
+        updated = updated + joiner + TITLE_INSTRUCTION
+    elif title is False and present:
+        updated = TITLE_SECTION.sub("", updated).rstrip("\n") + "\n"
+
     if updated == text:
         return None
     _write_atomically(instructions, updated)
@@ -269,7 +315,7 @@ def instruct(root, literal, place=True):
 
 def parse(argv):
     """Arguments, or a refusal. An unrecognised flag never reaches a write."""
-    path, place, dry, extra = None, True, False, []
+    path, place, dry, extra, title = None, True, False, [], None
     rest = argv[1:]
 
     if "--" in rest:
@@ -284,6 +330,10 @@ def parse(argv):
             place = False
         elif argument == "--dry-run":
             dry = True
+        elif argument == "--session-title":
+            title = True
+        elif argument == "--no-session-title":
+            title = False
         elif argument.startswith("-"):
             raise SystemExit(f"unrecognised flag: {argument}\n"
                              "Generator flags go after `--`.")
@@ -292,11 +342,11 @@ def parse(argv):
         else:
             raise SystemExit(f"unexpected argument: {argument}")
 
-    return os.path.abspath(path or os.getcwd()), place, dry, extra
+    return os.path.abspath(path or os.getcwd()), place, dry, extra, title
 
 
 def main(argv):
-    path, place, dry, extra = parse(argv)
+    path, place, dry, extra, title = parse(argv)
 
     if dry:
         run_generator(path, ["--check", *extra])
@@ -309,10 +359,12 @@ def main(argv):
     # does -- by asking git, not by guessing.
     root = _toplevel(path)
     literal = image_literal(root)
-    changed = instruct(root, literal, place)
+    changed = instruct(root, literal, place, title)
 
-    print(f"literal {'updated' if changed else 'unchanged'} "
-          f"in {os.path.join(root, INSTRUCTIONS_NAME)}")
+    # Not "literal updated": the literal, the session-title section, or both may
+    # have changed, and naming only one of them is wrong half the time.
+    print(f"{os.path.join(root, INSTRUCTIONS_NAME)} "
+          f"{'updated' if changed else 'unchanged'}")
     return 0
 
 

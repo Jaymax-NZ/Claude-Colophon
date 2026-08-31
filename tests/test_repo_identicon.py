@@ -179,11 +179,58 @@ class TestItRefusesRatherThanGuesses(TreeCase):
     def test_generator_flags_are_only_taken_after_a_separator(self):
         """`--block` is the generator's, and this script must not silently
         swallow it as one of its own."""
-        _, _, _, extra = skill.parse(["x", str(self.root), "--", "--block", "5"])
+        extra = skill.parse(["x", str(self.root), "--", "--block", "5"])[3]
         self.assertEqual(["--block", "5"], extra)
 
         with self.assertRaises(SystemExit):
             skill.parse(["x", str(self.root), "--block", "5"])
+
+
+class TestTheSessionTitleSection(TreeCase):
+    """Opt-in, and separate from the turn mark: renaming sessions changes what
+    the user sees in rows they are not looking at."""
+
+    def install(self, title=None):
+        return skill.instruct(str(self.root), skill.image_literal(str(self.root)),
+                              True, title)
+
+    def test_it_is_absent_unless_asked_for(self):
+        self.install()
+        self.assertNotIn(skill.TITLE_HEADING, self.read(INSTRUCTIONS))
+
+    def test_it_is_added_on_request(self):
+        self.install(title=True)
+        self.assertIn(skill.TITLE_HEADING, self.read(INSTRUCTIONS))
+
+    def test_adding_it_twice_writes_one_copy(self):
+        self.install(title=True)
+        self.install(title=True)
+        self.assertEqual(1, self.read(INSTRUCTIONS).count(skill.TITLE_HEADING))
+
+    def test_a_plain_rerun_neither_adds_nor_removes_it(self):
+        """A re-run picks up a changed mark. It must not decide this too."""
+        self.install(title=True)
+        before = self.read(INSTRUCTIONS)
+        self.install()
+        self.assertEqual(before, self.read(INSTRUCTIONS))
+
+    def test_it_can_be_removed_without_taking_the_block_with_it(self):
+        self.install(title=True)
+        self.install(title=False)
+        text = self.read(INSTRUCTIONS)
+        self.assertNotIn(skill.TITLE_HEADING, text)
+        self.assertIn(FAKE_B64, text)
+
+    def test_removing_it_leaves_a_later_section_intact(self):
+        """The section ends at the next heading, not at the end of the file."""
+        self.install(title=True)
+        (self.root / INSTRUCTIONS).write_text(
+            self.read(INSTRUCTIONS) + "\n## Something this repository added\n\nKeep me.\n",
+            encoding="utf-8")
+        self.install(title=False)
+        text = self.read(INSTRUCTIONS)
+        self.assertNotIn(skill.TITLE_HEADING, text)
+        self.assertIn("Keep me.", text)
 
 
 @unittest.skipUnless(generator_available(),

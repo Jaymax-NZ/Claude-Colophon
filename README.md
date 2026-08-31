@@ -44,6 +44,33 @@ inline `data:` image, with the instruction to emit it last on every turn. That
 is the one form the directory cannot supply, because a `data:` URI carries bytes
 and cannot reference a path.
 
+## The session title
+
+The turn-end mark says which project a *reply* came from. `/tricolour` puts the
+same identity in the session list, where the question is which of eight rows to
+click:
+
+```
+🟥🟫🟥 Identicon assets and derivation strip
+```
+
+A title is one line and the 5×5 pattern needs two, so the title carries the
+triple alone — which is what the standard specifies for a medium that affords
+one line. It marks this session and every other open session on the same
+repository.
+
+Membership is decided by the contents of
+`.identicon/repository-identicon.tricolour`, never by the path. Two sessions in
+separate git worktrees of one repository have different working directories and
+the same mark, so they group; two projects sharing a parent directory do not.
+A repository with no identicon matches nothing and is left completely alone.
+
+`/repo-identicon --session-title` adds an opt-in section asking for this on
+every session; `--no-session-title` removes it. Neither is the default. Emitting
+an image at the end of a reply changes nothing outside the conversation, while
+renaming sessions changes rows the user is not looking at — so wanting the first
+does not install the second.
+
 **No code is installed into your repository** and it gains no dependency on this
 plugin. An identicon is a constant for a repository; it is derived once.
 

@@ -63,3 +63,16 @@ per line. The only channel in a GUI chat client that renders markdown is an
 assistant message, and only the model writes those. So the deterministic
 mechanism cannot render, and the mechanism that renders cannot be made
 deterministic. This is the second of the two, chosen knowingly.
+
+## Carry the identicon in the session title
+
+On an early turn, run `/tricolour`. It puts this repository's identicon triple
+at the front of this session's title, and of every other open session on this
+repository, so that the session list is scannable by project rather than by
+reading each row.
+
+The triple is the whole mark for a single line: a session title cannot hold the
+5x5 pattern, which needs two.
+
+Opt out by deleting this section. Nothing regenerates it -- `--session-title`
+adds it and `--no-session-title` removes it, and neither is the default.
