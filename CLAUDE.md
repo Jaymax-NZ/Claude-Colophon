@@ -32,7 +32,7 @@ usable with no parsing at all:
 | `.identicon/repository-identicon.png` | a README, or anywhere that refuses SVG |
 | `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
 | `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
-| `.identicon/repository-identicon.tricolour` | three emoji squares; the whole mark for a session title, a tab title, or any single line |
+| `.identicon/repository-identicon.tricolour` | the emoji tricolour; the whole mark for a session title, a tab title, or any single line |
 | `.identicon/repository-identicon.sextant` | the pattern in sextants, two lines, for a terminal |
 | `.identicon/repository-identicon.octant` | the pattern in octants, two lines, where the font carries them |
 | `.identicon/repository-identicon.grid` | five rows of `0` and `1`, for anything drawing its own cells |
@@ -44,7 +44,7 @@ larger sizes, for a favicon, an avatar or a display that scales.
 The two-line text form is composed rather than stored: the contents of
 `.sextant`, a space, then the contents of `.tricolour`. The pattern is
 monochrome because a sextant is one glyph per several cells and cannot be
-coloured per cell, so the colour rides in the emoji squares — which is also how
+coloured per cell, so the colour rides in the emoji tricolour — which is also how
 it survives a channel that strips ANSI.
 
 Each name repeats the directory on purpose, so that a file still says what it is
@@ -66,13 +66,13 @@ deterministic. This is the second of the two, chosen knowingly.
 
 ## Carry the identicon in the session title
 
-On an early turn, run `/tricolour`. It puts this repository's identicon triple
+On an early turn, run `/tricolour`. It puts this repository's emoji tricolour
 at the front of this session's title, and of every other open session on this
 repository, so that the session list is scannable by project rather than by
 reading each row.
 
-The triple is the whole mark for a single line: a session title cannot hold the
-5x5 pattern, which needs two.
+The tricolour is the whole mark for a single line: a session title cannot hold
+the 5x5 pattern, which needs two.
 
 Opt out by deleting this section. Nothing regenerates it -- `--session-title`
 adds it and `--no-session-title` removes it, and neither is the default.

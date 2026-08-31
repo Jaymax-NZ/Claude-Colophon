@@ -55,8 +55,8 @@ click:
 ```
 
 A title is one line and the 5×5 pattern needs two, so the title carries the
-triple alone — which is what the standard specifies for a medium that affords
-one line. It marks this session and every other open session on the same
+emoji tricolour alone — which is what the standard specifies for a medium that
+affords one line. It marks this session and every other open session on the same
 repository.
 
 Membership is decided by the contents of

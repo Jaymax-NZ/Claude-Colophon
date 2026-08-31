@@ -61,7 +61,7 @@ Bash(<plugin path>/skills/tricolour/tricolour.py:*)
 
 Run by `/tricolour`. It reads `.identicon/repository-identicon.tricolour` for
 the current repository and for each working directory you pass it, and prints
-which ones carry the same triple. It shells out only to `git rev-parse
+which ones carry the same tricolour. It shells out only to `git rev-parse
 --show-toplevel`, **writes nothing at all**, and makes no network call.
 
 Renaming the sessions is not done by this script and cannot be: setting a title

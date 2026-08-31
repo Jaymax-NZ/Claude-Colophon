@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 """Which open sessions belong to this repository's identicon.
 
-Reads `.identicon/repository-identicon.tricolour` -- three emoji squares the
+Reads `.identicon/repository-identicon.tricolour` -- the emoji tricolour the
 generator writes -- for a reference repository and for each candidate path, and
-reports the candidates whose triple is identical.
+reports the candidates whose tricolour is identical.
 
     tricolour.py [--repo PATH] [CANDIDATE ...]
 
-**The match is on the triple's contents, never on the path.** Two sessions in
+**The match is on the tricolour's contents, never on the path.** Two sessions in
 separate git worktrees of one repository have different working directories and
 the same seed, so they must group together; two repositories that merely sit
 near each other on disk must not. Comparing the artifact gets both right, and
 gets them right without this script knowing anything about how the mark is
-derived.
+derived -- including which glyphs the tricolour is drawn from, which is not
+fixed.
 
 It also means a repository with no `.identicon/` matches nothing and is
 reported as nothing, so a caller cannot accidentally act on one.
 
 Output is one record per line, `field<TAB>value`:
 
-    triple	🟥🟫🟥
+    tricolour	🟥🟫🟥
     match	/home/justin/Code/Isolated/Repository-Identicon/some-worktree
 
-Exit 1, with no `match` lines, when the reference repository has no triple.
+Exit 1, with no `match` lines, when the reference repository has no tricolour.
 There is nothing to apply in that case, and an empty success would read as
 "checked, nothing matched" rather than "this repository has no identicon".
 """
@@ -56,8 +57,8 @@ def toplevel(path):
     return done.stdout.strip() or None
 
 
-def triple_at(path):
-    """The triple for the repository containing `path`, or None.
+def tricolour_at(path):
+    """The tricolour for the repository containing `path`, or None.
 
     None covers every uninteresting case at once -- not a directory, not a
     repository, no identicon installed, unreadable -- because the caller does
@@ -88,14 +89,14 @@ def main(argv):
             return 0
         raise SystemExit(f"unrecognised flag: {args[0]}")
 
-    wanted = triple_at(reference)
+    wanted = tricolour_at(reference)
     if wanted is None:
         print(f"no identicon for {reference}", file=sys.stderr)
         return 1
 
-    print(f"triple\t{wanted}")
+    print(f"tricolour\t{wanted}")
     for candidate in args:
-        if triple_at(candidate) == wanted:
+        if tricolour_at(candidate) == wanted:
             print(f"match\t{candidate}")
     return 0
 

@@ -24,7 +24,7 @@ absence is a clear error rather than a silent fallback to a second derivation.
                       [-- GENERATOR ARGS]
 
 `--session-title` adds an opt-in section asking Claude to carry the identicon
-triple in the session title as well; `--no-session-title` removes it. Neither
+tricolour in the session title as well; `--no-session-title` removes it. Neither
 is the default, because a re-run exists to pick up a changed mark and must not
 turn a separate behaviour on or off on the way past.
 
@@ -104,13 +104,13 @@ TITLE_HEADING = "## Carry the identicon in the session title"
 
 TITLE_INSTRUCTION = f"""{TITLE_HEADING}
 
-On an early turn, run `/tricolour`. It puts this repository's identicon triple
+On an early turn, run `/tricolour`. It puts this repository's emoji tricolour
 at the front of this session's title, and of every other open session on this
 repository, so that the session list is scannable by project rather than by
 reading each row.
 
-The triple is the whole mark for a single line: a session title cannot hold the
-5x5 pattern, which needs two.
+The tricolour is the whole mark for a single line: a session title cannot hold
+the 5x5 pattern, which needs two.
 
 Opt out by deleting this section. Nothing regenerates it -- `--session-title`
 adds it and `--no-session-title` removes it, and neither is the default.
