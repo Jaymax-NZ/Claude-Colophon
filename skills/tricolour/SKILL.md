@@ -57,11 +57,19 @@ nothing to say which is current. Stripping and re-adding makes every run
 self-healing, and makes the command safe to run twice.
 
 **Recognise it by position and count, not by which glyphs it uses.** A tricolour
-is exactly three emoji followed by a space, at the very start of the title. It
-is not always three squares: the palette carries other shapes, and matching
-squares specifically would leave every non-square tricolour behind. Matching the
-*current* value is worse still — it can only ever find the marks that are
-already correct, which are the ones that need no work.
+is exactly three emoji at the very start of the title, followed by a space or by
+the end of the title. It is not always three squares: the palette carries other
+shapes, and matching squares specifically would leave every non-square tricolour
+behind. Matching the *current* value is worse still — it can only ever find the
+marks that are already correct, which are the ones that need no work.
+
+**Or by the end of the title**, because a session whose title is nothing but a
+tricolour is a real state — it happens when a title was never generated. Requiring
+a following space would fail to see it and prefix a second one.
+
+**Strip repeatedly, not once.** If a title somehow carries two, removing one
+leaves the other, and the result still looks wrong to the only person who would
+notice. Keep removing while the title starts with a tricolour.
 
 **Count grapheme clusters, not code points.** One emoji is not reliably one
 character. The red heart is U+2764 followed by the variation selector U+FE0F —
