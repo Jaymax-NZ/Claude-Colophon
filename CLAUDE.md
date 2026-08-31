@@ -32,7 +32,20 @@ usable with no parsing at all:
 | `.identicon/repository-identicon.png` | a README, or anywhere that refuses SVG |
 | `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
 | `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
-| `.identicon/repository-identicon.txt` | a terminal; the pattern in octants and the colour in emoji, which is how colour survives a channel that strips ANSI |
+| `.identicon/repository-identicon.tricolour` | three emoji squares; the whole mark for a session title, a tab title, or any single line |
+| `.identicon/repository-identicon.sextant` | the pattern in sextants, two lines, for a terminal |
+| `.identicon/repository-identicon.octant` | the pattern in octants, two lines, where the font carries them |
+| `.identicon/repository-identicon.grid` | five rows of `0` and `1`, for anything drawing its own cells |
+| `.identicon/repository-identicon.key` | the seed and mapping version this mark was derived from |
+
+`repository-identicon-128.png`, `-256.png` and `@4x.png` are the same raster at
+larger sizes, for a favicon, an avatar or a display that scales.
+
+The two-line text form is composed rather than stored: the contents of
+`.sextant`, a space, then the contents of `.tricolour`. The pattern is
+monochrome because a sextant is one glyph per several cells and cannot be
+coloured per cell, so the colour rides in the emoji squares — which is also how
+it survives a channel that strips ANSI.
 
 Each name repeats the directory on purpose, so that a file still says what it is
 once it has been copied somewhere else.
