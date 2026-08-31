@@ -63,6 +63,13 @@ squares specifically would leave every non-square tricolour behind. Matching the
 *current* value is worse still — it can only ever find the marks that are
 already correct, which are the ones that need no work.
 
+**Count grapheme clusters, not code points.** One emoji is not reliably one
+character. The red heart is U+2764 followed by the variation selector U+FE0F —
+two code points where every other heart is one — so a tricolour built from
+hearts can be four code points rather than three. Counting characters would
+read that as "not a tricolour" and leave a stale mark in place, which is the
+one thing this step exists to prevent.
+
 Three-and-a-space is also what keeps a title someone decorated with a single
 emoji of their own from being eaten.
 
