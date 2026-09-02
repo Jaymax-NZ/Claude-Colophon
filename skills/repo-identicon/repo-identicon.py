@@ -265,8 +265,18 @@ deterministic. This is the second of the two, chosen knowingly.
 # The local document. Repository constants, every variant a user might pick,
 # written to a gitignored file so the choice of which to use stays with the
 # reader rather than with whoever ran the generator last.
-
-LOCAL_NAME = "CLAUDE.local.md"
+#
+# **It is not `CLAUDE.local.md`.** That file is the documented place for a
+# user's own project preferences -- sandbox URLs, test data -- and it exists in
+# repositories that have never heard of this plugin. A generated document must
+# not share a file with hand-written content, because keeping them apart then
+# depends on parsing the user's prose correctly on every run, and the failure
+# mode is destroying it.
+#
+# `.claude/rules/` is the purpose-built alternative: files there load at launch
+# with the same priority as `.claude/CLAUDE.md`, one file per topic, so this one
+# can be owned outright and rewritten without reading anything first.
+LOCAL_NAME = ".claude/rules/identicon-constants.md"
 SETTINGS_NAME = f"{DIRECTORY}/settings.json"
 
 BLOCKS = (1, 2, 3, 4, 5)
@@ -309,9 +319,14 @@ def local_document(root):
     lines = [
         "# Identicon constants for this repository",
         "",
-        "Generated from `.identicon/settings.json`. Do not edit -- regenerate with",
-        "`/repo-identicon`. This file is gitignored: it holds every variant so that",
-        "which one to use is your choice, not this repository's.",
+        "Generated from `.identicon/settings.json` and rewritten in full on every",
+        "run of `/repo-identicon`. **Do not edit it** -- put anything of your own in",
+        "`CLAUDE.local.md`, which this plugin never touches.",
+        "",
+        "It is gitignored, and it holds every rendering variant so that which one to",
+        "use is your choice rather than this repository's. State that choice in",
+        "`~/.claude/CLAUDE.md`, where it applies to every repository with an",
+        "identicon.",
         "",
         "## Turn mark",
         "",

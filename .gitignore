@@ -6,4 +6,7 @@ __pycache__/
 # tracked copy would make one person's screen everybody's default. Being ignored
 # also means it does not exist in a fresh worktree until the installer runs
 # there, which is why the installer writes it every time.
-CLAUDE.local.md
+#
+# Deliberately not CLAUDE.local.md: that file belongs to whoever works here, and
+# this one is overwritten without being read.
+.claude/rules/identicon-constants.md

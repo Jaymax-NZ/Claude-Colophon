@@ -52,6 +52,11 @@ def load():
 
 skill = load()
 
+# The generated constants document, taken from the installer rather than
+# repeated here: if it ever moves back into a file the user owns, these tests
+# should follow it there and keep asserting it is rewritten wholesale.
+LOCAL_NAME = skill.LOCAL_NAME
+
 
 def git(root, *args):
     subprocess.run(["git", "-C", str(root), *args], check=True,
@@ -258,27 +263,42 @@ class TestEndToEnd(unittest.TestCase):
     def test_the_local_document_carries_every_block_size(self):
         """The point of the file: the reader picks, so all five must be there."""
         self.assertEqual(0, run(str(self.root)).returncode)
-        text = (self.root / "CLAUDE.local.md").read_text()
+        text = (self.root / LOCAL_NAME).read_text()
         for block in (1, 2, 3, 4, 5):
             with self.subTest(block=block):
                 self.assertIn(f"- block {block}: ![](data:image/png;base64,", text)
 
     def test_the_local_document_carries_the_text_renderings(self):
         self.assertEqual(0, run(str(self.root)).returncode)
-        text = (self.root / "CLAUDE.local.md").read_text()
+        text = (self.root / LOCAL_NAME).read_text()
         for heading in ("## Tricolour", "## Sextant", "## Octant"):
             with self.subTest(heading=heading):
                 self.assertIn(heading, text)
 
     def test_no_local_writes_no_local_document(self):
         self.assertEqual(0, run(str(self.root), "--no-local").returncode)
-        self.assertFalse((self.root / "CLAUDE.local.md").exists())
+        self.assertFalse((self.root / LOCAL_NAME).exists())
 
     def test_a_second_run_leaves_the_local_document_untouched(self):
         self.assertEqual(0, run(str(self.root)).returncode)
-        before = (self.root / "CLAUDE.local.md").read_bytes()
+        before = (self.root / LOCAL_NAME).read_bytes()
         self.assertEqual(0, run(str(self.root)).returncode)
-        self.assertEqual(before, (self.root / "CLAUDE.local.md").read_bytes())
+        self.assertEqual(before, (self.root / LOCAL_NAME).read_bytes())
+
+    def test_the_user_s_own_local_file_is_never_touched(self):
+        """CLAUDE.local.md is the documented place for a user's own project
+        preferences. This plugin writes a file it owns outright instead, because
+        sharing one with hand-written content means parsing that content
+        correctly on every run and destroying it when the parse is wrong."""
+        mine = self.root / "CLAUDE.local.md"
+        content = "# Mine\n\nSandbox URL: http://localhost:9999\n"
+        mine.write_text(content, encoding="utf-8")
+
+        self.assertEqual(0, run(str(self.root)).returncode)
+
+        self.assertEqual(content, mine.read_text(encoding="utf-8"))
+        self.assertTrue((self.root / LOCAL_NAME).exists())
+        self.assertNotEqual(LOCAL_NAME, "CLAUDE.local.md")
 
 
 if __name__ == "__main__":
