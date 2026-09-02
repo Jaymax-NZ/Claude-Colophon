@@ -36,13 +36,18 @@ parts beside it.
 `@4x` for a favicon, an avatar or a display that scales.
 
 **Which variant to use is a reader's choice, not this repository's.**
-`.claude/rules/identicon.md` is generated per checkout, is gitignored,
-and holds every turn-mark size alongside each text rendering. Size and
-glyph-family preferences belong in `~/.claude/CLAUDE.md`, where they apply to
-every repository carrying an identicon rather than to this one.
+`.claude/rules/identicon.md` is committed and holds every turn-mark size
+alongside each text rendering. It carries no preference — every checkout derives
+the same file from the same settings — so it is shared like any other rule.
+Size and glyph-family preferences belong in `~/.claude/CLAUDE.md`, where they
+apply to every repository carrying an identicon rather than to this one.
 
-That file is rewritten in full on every run and must not be edited.
-`CLAUDE.local.md` is yours and this plugin never writes to it.
+It is an unscoped rule, carrying no `paths:` frontmatter, because unscoped rules
+are re-injected from disk after compaction while scoped ones only reload when a
+matching file is read. A mark emitted on every turn must not depend on that.
+
+It is rewritten in full on every run and must not be edited. `CLAUDE.local.md`
+is yours and this plugin never writes to it.
 
 The pattern in a text rendering is monochrome because a sextant is one glyph per
 several cells and cannot be coloured per cell, so the colour rides in the emoji
