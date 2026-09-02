@@ -83,15 +83,18 @@ emoji of their own from being eaten.
 
 ## `list_sessions` is not a complete list. Never report a sweep
 
-**It returns fewer sessions than the client's own sidebar shows**, and the two
-views disagree in both directions. Observed 2026-09-02 on this repository: the
-sidebar listed three sessions, `list_sessions` returned one of them even with
-`include_archived` — while the session it *did* return had no transcript on disk
-at all. The missing one was absent from the listing, from the live process
-roster, and from `search_session_transcripts`.
+**It is local-only.** Every id it returns is prefixed `local_`, and that prefix
+is the whole answer: a **cloud session** working on the same repository is
+invisible to it, has no transcript on this machine, no local process, and is not
+returned by `get_session` or `search_session_transcripts` either. Confirmed
+2026-09-02, after three wrong explanations — the sidebar showed three sessions
+for this repository and the listing returned one.
 
-The cause is not established. It is **not** simply that console sessions are
-excluded — that was checked and is wrong.
+`ListAgents` does not fill the gap: it reports peers, and a cloud session need
+not appear there.
+
+So a cloud session cannot be marked from here at all. It also cannot run this
+skill, which is not installed in that environment.
 
 So report what was marked and how it was found. Do not say "all sessions for
 this repository", because that cannot be known from here. If the user names a
