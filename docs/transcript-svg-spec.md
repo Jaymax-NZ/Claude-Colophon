@@ -18,7 +18,7 @@ the web in Chrome, and Claude Desktop driving a remote session.
 | behaviour | Android | web / desktop |
 |---|---|---|
 | `data:image/svg+xml;base64,` | renders | renders |
-| `data:image/svg+xml,` percent-encoded | **fails to load** | not retested |
+| `data:image/svg+xml,` percent-encoded | failed once, see below | not retested |
 | `width` / `height` attributes | **ignored** | honoured |
 | `width` / `height` in `pt` | **ignored** | not retested |
 | `style="width:17px"` | **ignored** | not retested |
@@ -81,7 +81,7 @@ now known to be terminal-only.
   correctness in every other consumer and gains nothing.
 - **`preserveAspectRatio="xMinYMid meet"`** pins the mark to the left edge. The
   default is `xMidYMid`, which centres it in the empty box.
-- **Base64, not percent-encoding.** Percent-encoding failed to load on Android.
+- **Base64, not percent-encoding** -- provisionally. See the caveat below.
 - The ratio is the only number that varies, and `width` and `viewBox` must both
   carry it. Editing one and not the other letterboxes the mark inside the wrong
   box on any compliant renderer, and looks fine on Android — a divergence worth
@@ -131,6 +131,20 @@ Standard contour tracing; the same step potrace calls path decomposition.
 **The check that makes it safe:** the shoelace area of the loops must equal the
 count of filled cells. One line, catches a mis-wound hole or a mis-chained loop,
 and belongs with the conformance vectors rather than here.
+
+## The one weak claim in here
+
+**Percent-encoding is recorded as failing on Android on a single confounded
+trial.** The URI that failed differed from the ones that worked in two ways at
+once: it was percent-encoded *and* it declared a width against a mismatched
+viewBox. A mismatch ought to letterbox rather than fail, so the encoding is the
+likely cause -- but that is an inference, not the measurement the table implies.
+
+Everything else here was varied one property at a time. Re-run it as a
+single-variable test before relying on it: identical SVG bytes, one base64, one
+percent-encoded, both on a phone. Until then, base64 is the safe default on the
+evidence that it works everywhere, rather than on evidence that the alternative
+does not.
 
 ## The open decision
 
