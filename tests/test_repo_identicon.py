@@ -184,7 +184,7 @@ class TestItRefusesRatherThanGuesses(TreeCase):
     def test_generator_flags_are_only_taken_after_a_separator(self):
         """`--block` is the generator's, and this script must not silently
         swallow it as one of its own."""
-        extra = skill.parse(["x", str(self.root), "--", "--block", "5"])[3]
+        extra = skill.parse(["x", str(self.root), "--", "--block", "5"])[2]
         self.assertEqual(["--block", "5"], extra)
 
         with self.assertRaises(SystemExit):
@@ -252,13 +252,36 @@ class TestEndToEnd(unittest.TestCase):
         git(self.root, "remote", "add", "origin", REMOTE)
         self.addCleanup(self._tmp.cleanup)
 
-    def test_the_literal_matches_the_png_the_generator_wrote(self):
+    def test_a_literal_matches_the_png_the_generator_wrote(self):
+        """The rule's block-5 entry and the committed raster are one image."""
         result = run(str(self.root))
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
         png = (self.root / PNG_NAME).read_bytes()
         expected = base64.b64encode(png).decode("ascii")
-        self.assertIn(expected, (self.root / INSTRUCTIONS).read_text())
+        self.assertIn(expected, (self.root / LOCAL_NAME).read_text())
+
+    def test_the_repository_s_own_claude_md_is_not_written(self):
+        """The instructions live in the rule now. A repository's CLAUDE.md is
+        its own, and this tool no longer edits it at all."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        self.assertFalse((self.root / INSTRUCTIONS).exists())
+
+    def test_a_legacy_section_is_reported_but_not_removed(self):
+        """The installed section invites a repository to rewrite its prose and
+        promises a re-run will leave that wording alone. Deleting it wholesale
+        would break the promise, so it happens only when asked."""
+        legacy = f"# Project\n\n{skill.IDENTICON_HEADING}\n\nOld words.\n"
+        (self.root / INSTRUCTIONS).write_text(legacy, encoding="utf-8")
+
+        result = run(str(self.root))
+        self.assertIn("still carries an identicon section", result.stdout)
+        self.assertIn("Old words.", (self.root / INSTRUCTIONS).read_text())
+
+        self.assertEqual(0, run(str(self.root), "--retire").returncode)
+        text = (self.root / INSTRUCTIONS).read_text()
+        self.assertNotIn(skill.IDENTICON_HEADING, text)
+        self.assertIn("# Project", text)
 
     def test_the_local_document_carries_every_block_size(self):
         """The point of the file: the reader picks, so all five must be there."""
@@ -275,8 +298,8 @@ class TestEndToEnd(unittest.TestCase):
             with self.subTest(heading=heading):
                 self.assertIn(heading, text)
 
-    def test_no_local_writes_no_local_document(self):
-        self.assertEqual(0, run(str(self.root), "--no-local").returncode)
+    def test_no_rule_writes_no_rule(self):
+        self.assertEqual(0, run(str(self.root), "--no-rule").returncode)
         self.assertFalse((self.root / LOCAL_NAME).exists())
 
     def test_a_second_run_leaves_the_local_document_untouched(self):

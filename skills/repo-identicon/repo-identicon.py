@@ -326,7 +326,33 @@ def local_document(root):
     drawing = renders.get("blockDrawing", {})
 
     lines = [
-        "# Identicon constants for this repository",
+        "# Identicon",
+        "",
+        "## Sign every response with this repository's identicon",
+        "",
+        "Emit the turn mark below, verbatim, as the last line of every response in",
+        "this repository. Nothing after it.",
+        "",
+        "**Also emit it immediately before asking the user anything** -- as the last",
+        "line of the text preceding a question, including before a tool call that",
+        "puts a question to them. A turn that ends in a question may never reach a",
+        "turn-end at all, so it is both the turn most likely to lose the mark and the",
+        "one where the reader most needs it: they are being asked to stop and decide,",
+        "and which project is asking is part of the question.",
+        "",
+        "Which size to emit is a reader's choice, stated once in `~/.claude/CLAUDE.md`",
+        "and applying to every repository with an identicon. Absent a stated choice,",
+        "use block 3.",
+        "",
+        "**Why this is an instruction rather than a hook**, given that an instruction",
+        "depends on compliance and a hook does not: no hook output field can display",
+        "an image. A hook's `systemMessage` arrives as plain text, one event-name",
+        "prefix per line. The only channel in a GUI chat client that renders markdown",
+        "is an assistant message, and only the model writes those. So the",
+        "deterministic mechanism cannot render, and the mechanism that renders cannot",
+        "be made deterministic. This is the second of the two, chosen knowingly.",
+        "",
+        "## About this file",
         "",
         "Generated from `.identicon/settings.json` and rewritten in full on every",
         "run of `/repo-identicon`. **Do not edit it** -- put anything of your own in",
@@ -367,6 +393,38 @@ def write_local(root):
         return None
     _write_atomically(target, wanted)
     return target
+
+
+IDENTICON_HEADING = "## Sign every response with this repository's identicon"
+
+# From the heading to the next one at the same level, or to the end.
+IDENTICON_SECTION = re.compile(
+    r"\n*" + re.escape(IDENTICON_HEADING) + r".*?(?=\n## |\Z)", re.S)
+
+
+def retire(root, remove=False):
+    """Report, or remove, an identicon section left in the repository's CLAUDE.md.
+
+    The instructions moved into the rule this script owns. An install that
+    predates the move still carries them in `CLAUDE.md`, where they now say the
+    same thing twice -- and the documentation is explicit that contradicting
+    instructions get resolved arbitrarily.
+
+    **Removal is opt-in, and that is not timidity.** The section this tool
+    installs invites a repository to rewrite the surrounding explanation, and
+    promises in its own text that a re-run leaves that wording alone. Deleting
+    the section wholesale breaks the promise for anyone who took it up, so it
+    happens only when asked for by name.
+    """
+    instructions = _within(root, os.path.join(root, INSTRUCTIONS_NAME))
+    text = _read(instructions)
+    if text is None or not IDENTICON_SECTION.search(text):
+        return None
+    if not remove:
+        return "present"
+    updated = IDENTICON_SECTION.sub("", text).rstrip("\n") + "\n"
+    _write_atomically(instructions, updated)
+    return "removed"
 
 
 def instruct(root, literal, place=True, title=None):
@@ -424,7 +482,7 @@ def instruct(root, literal, place=True, title=None):
 
 def parse(argv):
     """Arguments, or a refusal. An unrecognised flag never reaches a write."""
-    path, place, dry, extra, title, local = None, True, False, [], None, True
+    path, dry, extra, rule, remove = None, False, [], True, False
     rest = argv[1:]
 
     if "--" in rest:
@@ -435,16 +493,12 @@ def parse(argv):
         if argument in ("--help", "-h"):
             print(__doc__.strip())
             raise SystemExit(0)
-        if argument == "--no-instruct":
-            place = False
-        elif argument == "--dry-run":
+        if argument == "--dry-run":
             dry = True
-        elif argument == "--session-title":
-            title = True
-        elif argument == "--no-session-title":
-            title = False
-        elif argument == "--no-local":
-            local = False
+        elif argument == "--no-rule":
+            rule = False
+        elif argument == "--retire":
+            remove = True
         elif argument.startswith("-"):
             raise SystemExit(f"unrecognised flag: {argument}\n"
                              "Generator flags go after `--`.")
@@ -453,11 +507,11 @@ def parse(argv):
         else:
             raise SystemExit(f"unexpected argument: {argument}")
 
-    return os.path.abspath(path or os.getcwd()), place, dry, extra, title, local
+    return os.path.abspath(path or os.getcwd()), dry, extra, rule, remove
 
 
 def main(argv):
-    path, place, dry, extra, title, local = parse(argv)
+    path, dry, extra, rule, remove = parse(argv)
 
     if dry:
         run_generator(path, ["--check", *extra])
@@ -469,18 +523,20 @@ def main(argv):
     # is handed the same path and resolves the root the same way the generator
     # does -- by asking git, not by guessing.
     root = _toplevel(path)
-    literal = image_literal(root)
-    changed = instruct(root, literal, place, title)
 
-    # Not "literal updated": the literal, the session-title section, or both may
-    # have changed, and naming only one of them is wrong half the time.
-    print(f"{os.path.join(root, INSTRUCTIONS_NAME)} "
-          f"{'updated' if changed else 'unchanged'}")
-
-    if local:
+    if rule:
         written = write_local(root)
         print(f"{os.path.join(root, LOCAL_NAME)} "
               f"{'updated' if written else 'unchanged'}")
+
+    state = retire(root, remove)
+    if state == "removed":
+        print(f"{os.path.join(root, INSTRUCTIONS_NAME)} identicon section removed")
+    elif state == "present":
+        print(f"note: {INSTRUCTIONS_NAME} still carries an identicon section, "
+              f"which now duplicates the rule. `--retire` removes it; it is not "
+              f"removed automatically because a repository may have rewritten "
+              f"that prose.")
     return 0
 
 
