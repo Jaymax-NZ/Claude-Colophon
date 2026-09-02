@@ -1,2 +1,9 @@
 __pycache__/
 *.pyc
+
+# Identicon constants, regenerated per checkout. Untracked on purpose: it holds
+# every rendering variant so that which one to use is the reader's choice, and a
+# tracked copy would make one person's screen everybody's default. Being ignored
+# also means it does not exist in a fresh worktree until the installer runs
+# there, which is why the installer writes it every time.
+CLAUDE.local.md

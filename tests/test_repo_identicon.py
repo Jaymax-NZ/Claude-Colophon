@@ -255,6 +255,31 @@ class TestEndToEnd(unittest.TestCase):
         expected = base64.b64encode(png).decode("ascii")
         self.assertIn(expected, (self.root / INSTRUCTIONS).read_text())
 
+    def test_the_local_document_carries_every_block_size(self):
+        """The point of the file: the reader picks, so all five must be there."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / "CLAUDE.local.md").read_text()
+        for block in (1, 2, 3, 4, 5):
+            with self.subTest(block=block):
+                self.assertIn(f"- block {block}: ![](data:image/png;base64,", text)
+
+    def test_the_local_document_carries_the_text_renderings(self):
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / "CLAUDE.local.md").read_text()
+        for heading in ("## Tricolour", "## Sextant", "## Octant"):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+
+    def test_no_local_writes_no_local_document(self):
+        self.assertEqual(0, run(str(self.root), "--no-local").returncode)
+        self.assertFalse((self.root / "CLAUDE.local.md").exists())
+
+    def test_a_second_run_leaves_the_local_document_untouched(self):
+        self.assertEqual(0, run(str(self.root)).returncode)
+        before = (self.root / "CLAUDE.local.md").read_bytes()
+        self.assertEqual(0, run(str(self.root)).returncode)
+        self.assertEqual(before, (self.root / "CLAUDE.local.md").read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()

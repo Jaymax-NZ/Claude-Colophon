@@ -12,7 +12,7 @@ at all, so it is both the turn most likely to lose the mark and the one where
 the reader most needs it: they are being asked to stop and decide, and which
 project is asking is part of the question.
 
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAASUlEQVR4nGMYtOByAMN/dExYF5lg1DKqAJpZRqzBVHHAqGXDwzJiMWHT0cCoZYPbMkoMJtkBo5YNPcuwAZoZjA2MWjb0LKMFAADvj+qbXLsw2gAAAABJRU5ErkJggg==)
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAARUlEQVR4nGOgOzgjf+o/MZgqekctG3qWUWIIyQZjA6OWDW7LKDGYZAeMWjb0LMMGaGYwNjBq2fCwjBJ1eMGoZUPPMloAAKAYfRElkHoZAAAAAElFTkSuQmCC)
 
 It is a PNG of this repository's identicon: a 5x5 grid inside a one-pixel
 border, derived from the repository's identity rather than from its path, so it
@@ -24,31 +24,26 @@ which has rewritten the explanation keeps its wording -- and a number nothing
 refreshes is a number that goes stale.
 `.identicon/repository-identicon.png` is the record.
 
-`.identicon/` holds the same mark in every form a consumer might want, each
-usable with no parsing at all:
+`.identicon/settings.json` is the record. It carries the seed, the colour, the
+5x5 matrix, the tricolour as shape-and-colour pairs, and under `renders` the
+ready-made strings: `renders.tricolour`, and `renders.blockDrawing` with
+`sextant`, `octant` and `ascii`. Read a field; do not reassemble one from the
+parts beside it.
 
-| file | for |
-|---|---|
-| `.identicon/repository-identicon.png` | a README, or anywhere that refuses SVG |
-| `.identicon/repository-identicon.svg` | a README on a forge that renders it; anything scalable |
-| `.identicon/repository-identicon.colour` | `#rrggbb`, for a prompt, a badge, or a theme |
-| `.identicon/repository-identicon.tricolour` | the emoji tricolour; the whole mark for a session title, a tab title, or any single line |
-| `.identicon/repository-identicon.sextant` | the pattern in sextants, two lines, for a terminal |
-| `.identicon/repository-identicon.octant` | the pattern in octants, two lines, where the font carries them |
-| `.identicon/repository-identicon.grid` | five rows of `0` and `1`, for anything drawing its own cells |
-| `.identicon/repository-identicon.key` | the seed and mapping version this mark was derived from |
+`.identicon/` also holds the rasters and the vector —
+`repository-identicon.png` for a README or anywhere that refuses SVG,
+`repository-identicon.svg` where a forge renders it, and `-128`, `-256` and
+`@4x` for a favicon, an avatar or a display that scales.
 
-`repository-identicon-128.png`, `-256.png` and `@4x.png` are the same raster at
-larger sizes, for a favicon, an avatar or a display that scales.
+**Which variant to use is a reader's choice, not this repository's.**
+`CLAUDE.local.md` is generated per checkout, is gitignored, and holds every
+turn-mark size alongside each text rendering. Size and glyph-family preferences
+belong in `~/.claude/CLAUDE.md`, where they apply to every repository carrying an
+identicon rather than to this one.
 
-The two-line text form is composed rather than stored: the contents of
-`.sextant`, a space, then the contents of `.tricolour`. The pattern is
-monochrome because a sextant is one glyph per several cells and cannot be
-coloured per cell, so the colour rides in the emoji tricolour — which is also how
-it survives a channel that strips ANSI.
-
-Each name repeats the directory on purpose, so that a file still says what it is
-once it has been copied somewhere else.
+The pattern in a text rendering is monochrome because a sextant is one glyph per
+several cells and cannot be coloured per cell, so the colour rides in the emoji
+tricolour — which is also how it survives a channel that strips ANSI.
 
 The literal above is base64 of the PNG, which is the one form a file cannot
 provide: a `data:` URI carries its bytes and cannot reference a path.
@@ -63,16 +58,3 @@ per line. The only channel in a GUI chat client that renders markdown is an
 assistant message, and only the model writes those. So the deterministic
 mechanism cannot render, and the mechanism that renders cannot be made
 deterministic. This is the second of the two, chosen knowingly.
-
-## Carry the identicon in the session title
-
-On an early turn, run `/tricolour`. It puts this repository's emoji tricolour
-at the front of this session's title, and of every other open session on this
-repository, so that the session list is scannable by project rather than by
-reading each row.
-
-The tricolour is the whole mark for a single line: a session title cannot hold
-the 5x5 pattern, which needs two.
-
-Opt out by deleting this section. Nothing regenerates it -- `--session-title`
-adds it and `--no-session-title` removes it, and neither is the default.

@@ -33,6 +33,7 @@ turn a separate behaviour on or off on the way past.
 """
 
 import base64
+import json
 import os
 import re
 import shutil
@@ -260,6 +261,89 @@ deterministic. This is the second of the two, chosen knowingly.
 """
 
 
+# --------------------------------------------------------------------------
+# The local document. Repository constants, every variant a user might pick,
+# written to a gitignored file so the choice of which to use stays with the
+# reader rather than with whoever ran the generator last.
+
+LOCAL_NAME = "CLAUDE.local.md"
+SETTINGS_NAME = f"{DIRECTORY}/settings.json"
+
+BLOCKS = (1, 2, 3, 4, 5)
+
+
+def _settings(root):
+    """The generator's settings for this repository, or a refusal."""
+    path = _within(root, os.path.join(root, SETTINGS_NAME))
+    raw = _read(path)
+    if raw is None:
+        raise SystemExit(f"{SETTINGS_NAME} is missing; run the generator first.")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"cannot parse {path}: {error}")
+
+
+def _rendered_png(root, block):
+    """One block size as PNG bytes, asked of the generator.
+
+    The sizes are not in settings, so they are requested rather than derived.
+    Five subprocesses, once per repository, is the right price for never
+    computing a pixel here.
+    """
+    command = [*find_generator(), "render", "--block", str(block),
+               "--format", "png", "--out", "-", root]
+    done = subprocess.run(command, capture_output=True)
+    if done.returncode != 0:
+        raise SystemExit(done.stderr.decode("utf-8", "replace").strip()
+                         or f"generator failed rendering block {block}")
+    return done.stdout
+
+
+def local_document(root):
+    """Every variant, laid out for a reader to choose from."""
+    settings = _settings(root)
+    renders = settings.get("renders", {})
+    drawing = renders.get("blockDrawing", {})
+
+    lines = [
+        "# Identicon constants for this repository",
+        "",
+        "Generated from `.identicon/settings.json`. Do not edit -- regenerate with",
+        "`/repo-identicon`. This file is gitignored: it holds every variant so that",
+        "which one to use is your choice, not this repository's.",
+        "",
+        "## Turn mark",
+        "",
+        "One per block size. Emit the one matching your size preference.",
+        "",
+    ]
+    for block in BLOCKS:
+        literal = (f"![](data:image/png;base64,"
+                   f"{base64.b64encode(_rendered_png(root, block)).decode('ascii')})")
+        lines.append(f"- block {block}: {literal}")
+
+    lines += ["", "## Tricolour", "", renders.get("tricolour", "(absent)"), ""]
+
+    for name in ("sextant", "octant", "ascii"):
+        rows = drawing.get(name)
+        if not rows:
+            continue
+        lines += [f"## {name.capitalize()}", "", "```", *rows, "```", ""]
+
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def write_local(root):
+    """Write the local document, or None if it was already current."""
+    target = _within(root, os.path.join(root, LOCAL_NAME))
+    wanted = local_document(root)
+    if _read(target) == wanted:
+        return None
+    _write_atomically(target, wanted)
+    return target
+
+
 def instruct(root, literal, place=True, title=None):
     """Place or refresh the literal in CLAUDE.md. Returns what changed.
 
@@ -315,7 +399,7 @@ def instruct(root, literal, place=True, title=None):
 
 def parse(argv):
     """Arguments, or a refusal. An unrecognised flag never reaches a write."""
-    path, place, dry, extra, title = None, True, False, [], None
+    path, place, dry, extra, title, local = None, True, False, [], None, True
     rest = argv[1:]
 
     if "--" in rest:
@@ -334,6 +418,8 @@ def parse(argv):
             title = True
         elif argument == "--no-session-title":
             title = False
+        elif argument == "--no-local":
+            local = False
         elif argument.startswith("-"):
             raise SystemExit(f"unrecognised flag: {argument}\n"
                              "Generator flags go after `--`.")
@@ -342,11 +428,11 @@ def parse(argv):
         else:
             raise SystemExit(f"unexpected argument: {argument}")
 
-    return os.path.abspath(path or os.getcwd()), place, dry, extra, title
+    return os.path.abspath(path or os.getcwd()), place, dry, extra, title, local
 
 
 def main(argv):
-    path, place, dry, extra, title = parse(argv)
+    path, place, dry, extra, title, local = parse(argv)
 
     if dry:
         run_generator(path, ["--check", *extra])
@@ -365,6 +451,11 @@ def main(argv):
     # have changed, and naming only one of them is wrong half the time.
     print(f"{os.path.join(root, INSTRUCTIONS_NAME)} "
           f"{'updated' if changed else 'unchanged'}")
+
+    if local:
+        written = write_local(root)
+        print(f"{os.path.join(root, LOCAL_NAME)} "
+              f"{'updated' if written else 'unchanged'}")
     return 0
 
 

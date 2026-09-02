@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Which open sessions belong to this repository's identicon.
 
-Reads `.identicon/repository-identicon.tricolour` -- the emoji tricolour the
-generator writes -- for a reference repository and for each candidate path, and
-reports the candidates whose tricolour is identical.
+Reads `renders.tricolour` from `.identicon/settings.json` -- the emoji tricolour
+the generator writes, already rendered -- for a reference repository and for
+each candidate path, and reports the candidates whose tricolour is identical.
 
     tricolour.py [--repo PATH] [CANDIDATE ...]
 
@@ -28,13 +28,19 @@ There is nothing to apply in that case, and an empty success would read as
 "checked, nothing matched" rather than "this repository has no identicon".
 """
 
+import json
 import os
 import subprocess
 import sys
 
 DIRECTORY = ".identicon"
-STEM = "repository-identicon"
-TRICOLOUR_NAME = f"{DIRECTORY}/{STEM}.tricolour"
+SETTINGS_NAME = f"{DIRECTORY}/settings.json"
+
+# Where the tricolour sits in the generator's settings. A rendered string, ready
+# to use -- this script does not assemble it from the shape-and-colour pairs
+# under `identicon.current.tricolour`, because assembling it would be deriving
+# it, and the generator has already done that.
+RENDER_PATH = ("renders", "tricolour")
 
 
 def toplevel(path):
@@ -68,11 +74,19 @@ def tricolour_at(path):
     if root is None:
         return None
     try:
-        with open(os.path.join(root, TRICOLOUR_NAME), encoding="utf-8") as handle:
-            value = handle.read().strip()
-    except (OSError, UnicodeDecodeError):
+        with open(os.path.join(root, SETTINGS_NAME), encoding="utf-8") as handle:
+            settings = json.load(handle)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return None
-    return value or None
+
+    value = settings
+    for step in RENDER_PATH:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(step)
+    if not isinstance(value, str):
+        return None
+    return value.strip() or None
 
 
 def main(argv):

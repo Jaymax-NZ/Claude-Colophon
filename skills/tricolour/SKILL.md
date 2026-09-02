@@ -90,9 +90,11 @@ emoji of their own from being eaten.
   membership; do not widen it by path prefix. Two projects can sit in one parent
   directory, and separate worktrees of one project sit in different ones — which
   is exactly why membership is decided by the artifact's contents.
-- **Never guess a tricolour.** It is read from
-  `.identicon/repository-identicon.tricolour`. Nothing in this plugin derives it,
-  and nothing here knows which glyphs it is drawn from.
+- **Never guess a tricolour.** It is read from `renders.tricolour` in
+  `.identicon/settings.json`, already rendered. Do not rebuild it from the
+  shape-and-colour pairs under `identicon.current.tricolour` beside it — that is
+  deriving it, and the generator has already done so. Nothing in this plugin
+  knows which glyphs it is drawn from.
 
 ## Why the helper exists at all
 
