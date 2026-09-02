@@ -81,6 +81,23 @@ one thing this step exists to prevent.
 Three-and-a-space is also what keeps a title someone decorated with a single
 emoji of their own from being eaten.
 
+## Console sessions cannot be marked, and say so
+
+`list_sessions` is a `mcp__ccd*` tool — the desktop app's own session manager —
+so it enumerates only the sessions that app hosts. A session started as `claude`
+in a terminal is invisible to it: not listed, not listed as archived, not listed
+while running with a live pid.
+
+The same session cannot mark itself either, because it has no `mcp__ccd*` tools
+at all. That is the identical signal the rule uses to choose the text rendering
+over the image, so a session that must emit sextants is exactly a session that
+cannot carry a tricolour in its title.
+
+**Say this when it applies rather than reporting a clean sweep.** Verified
+2026-09-02: three sessions were open on one repository, two desktop and one
+console; `list_sessions` returned only the desktop pair, and reporting "both
+done" read as complete when a third was sitting there unmarked.
+
 ## What not to do
 
 - **Never install an identicon as a side effect.** A repository with no
