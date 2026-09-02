@@ -81,22 +81,27 @@ one thing this step exists to prevent.
 Three-and-a-space is also what keeps a title someone decorated with a single
 emoji of their own from being eaten.
 
-## Console sessions cannot be marked, and say so
+## `list_sessions` is not a complete list. Never report a sweep
 
-`list_sessions` is a `mcp__ccd*` tool — the desktop app's own session manager —
-so it enumerates only the sessions that app hosts. A session started as `claude`
-in a terminal is invisible to it: not listed, not listed as archived, not listed
-while running with a live pid.
+**It returns fewer sessions than the client's own sidebar shows**, and the two
+views disagree in both directions. Observed 2026-09-02 on this repository: the
+sidebar listed three sessions, `list_sessions` returned one of them even with
+`include_archived` — while the session it *did* return had no transcript on disk
+at all. The missing one was absent from the listing, from the live process
+roster, and from `search_session_transcripts`.
 
-The same session cannot mark itself either, because it has no `mcp__ccd*` tools
-at all. That is the identical signal the rule uses to choose the text rendering
-over the image, so a session that must emit sextants is exactly a session that
-cannot carry a tricolour in its title.
+The cause is not established. It is **not** simply that console sessions are
+excluded — that was checked and is wrong.
 
-**Say this when it applies rather than reporting a clean sweep.** Verified
-2026-09-02: three sessions were open on one repository, two desktop and one
-console; `list_sessions` returned only the desktop pair, and reporting "both
-done" read as complete when a third was sitting there unmarked.
+So report what was marked and how it was found. Do not say "all sessions for
+this repository", because that cannot be known from here. If the user names a
+session the listing missed, the fix is to run `/tricolour` inside it: a session
+can always mark itself with `"self"`, whatever the listing does or does not
+know about it.
+
+A session with no `mcp__ccd*` tools is a separate case and genuinely cannot mark
+itself, since `set_session_title` is one of those tools. That is the same signal
+the rule uses to choose the text rendering over the image.
 
 ## What not to do
 
