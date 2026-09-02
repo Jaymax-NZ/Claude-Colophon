@@ -298,6 +298,18 @@ class TestEndToEnd(unittest.TestCase):
             with self.subTest(heading=heading):
                 self.assertIn(heading, text)
 
+    def test_the_rule_states_how_to_choose_between_the_renderings(self):
+        """Image-versus-text is an environment fact, not a taste, so the test
+        for it ships with every repository rather than living in one user's
+        preference file. Losing it is not hypothetical: without an explicit
+        test the image wins by default and lands in console sessions as
+        unreadable base64, which has happened more than once."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / LOCAL_NAME).read_text()
+        self.assertIn("mcp__ccd*", text)
+        self.assertIn("## Which rendering to emit", text)
+        self.assertIn("CLAUDE_CODE_ENTRYPOINT", text)
+
     def test_no_rule_writes_no_rule(self):
         self.assertEqual(0, run(str(self.root), "--no-rule").returncode)
         self.assertFalse((self.root / LOCAL_NAME).exists())
