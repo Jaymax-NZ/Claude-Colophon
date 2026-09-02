@@ -9,4 +9,4 @@ __pycache__/
 #
 # Deliberately not CLAUDE.local.md: that file belongs to whoever works here, and
 # this one is overwritten without being read.
-.claude/rules/identicon-constants.md
+.claude/rules/identicon.md

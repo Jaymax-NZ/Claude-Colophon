@@ -276,7 +276,16 @@ deterministic. This is the second of the two, chosen knowingly.
 # `.claude/rules/` is the purpose-built alternative: files there load at launch
 # with the same priority as `.claude/CLAUDE.md`, one file per topic, so this one
 # can be owned outright and rewritten without reading anything first.
-LOCAL_NAME = ".claude/rules/identicon-constants.md"
+# Named for the subject, not for today's contents. It holds constants now;
+# anything else per-checkout and identicon-shaped belongs here too, and a file
+# called `identicon-constants.md` would have to be renamed to accept it.
+#
+# **No `paths:` frontmatter, deliberately.** An unscoped rule is re-injected
+# from disk after compaction, exactly like the project-root CLAUDE.md. A scoped
+# one is only reloaded when Claude reads a file it matches, which for a mark
+# emitted on every turn would mean it silently stops being available partway
+# through a long session.
+LOCAL_NAME = ".claude/rules/identicon.md"
 SETTINGS_NAME = f"{DIRECTORY}/settings.json"
 
 BLOCKS = (1, 2, 3, 4, 5)

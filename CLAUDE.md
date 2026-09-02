@@ -36,7 +36,7 @@ parts beside it.
 `@4x` for a favicon, an avatar or a display that scales.
 
 **Which variant to use is a reader's choice, not this repository's.**
-`.claude/rules/identicon-constants.md` is generated per checkout, is gitignored,
+`.claude/rules/identicon.md` is generated per checkout, is gitignored,
 and holds every turn-mark size alongside each text rendering. Size and
 glyph-family preferences belong in `~/.claude/CLAUDE.md`, where they apply to
 every repository carrying an identicon rather than to this one.
