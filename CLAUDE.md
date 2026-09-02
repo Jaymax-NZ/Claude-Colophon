@@ -38,8 +38,9 @@ usable with no parsing at all:
 | `.identicon/repository-identicon.grid` | five rows of `0` and `1`, for anything drawing its own cells |
 | `.identicon/repository-identicon.key` | the seed and mapping version this mark was derived from |
 
-`repository-identicon-128.png`, `-256.png` and `@4x.png` are the same raster at
-larger sizes, for a favicon, an avatar or a display that scales.
+`repository-identicon-128.png` and `-256.png` are the same raster at larger
+sizes, for a favicon or an avatar. `@4x.png` was removed on 2026-09-03;
+`docs/repository-scope.md` gives the reason.
 
 The two-line text form is composed rather than stored: the contents of
 `.sextant`, a space, then the contents of `.tricolour`. The pattern is
