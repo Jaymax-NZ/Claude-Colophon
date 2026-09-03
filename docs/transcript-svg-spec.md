@@ -235,12 +235,23 @@ so it is a separate control from `--cell` and has no cap.
 
 ## Generating the path
 
-The vector carries the repository's own cell size, the one the raster uses --
-it is the same mark, and the 1-unit border against that cell is what gives it
-its proportions.
+**Draw it with unit squares**, coordinates 1 to 6, every number a single digit.
+A vector's coordinates are invisible: the reader sees which cells are filled,
+the colour, and the ratio of margin to grid. The first two are identical at any
+cell size, so the only thing a larger cell buys is longer numbers.
+
+The raster's `BORDER = 1` is a pixel-granularity constraint rather than a design
+decision -- two-thirds of a pixel cannot be drawn -- so the margin's *proportion*
+there is whatever falls out of the chosen cell, 1/7 at cell 1 and 1/27 at cell
+5. Carrying the number 1 against a cell of 5 into a vector inherits an artefact
+of the raster's limitations, not a property of the mark. Choose the margin
+deliberately instead; the generator's reason for never scaling it, that at cell
+1 it would swallow the pattern, is about a 7-pixel image and does not apply to
+something rendered at a twelfth of a column.
 
 Three encodings of the same 5x5 grid, measured over 500 identicons from real
-keys, as characters of `d`, at each end of the cell range:
+keys, as characters of `d`. The cell columns are there to show what the
+coordinate system costs, not to offer a choice:
 
 | method | cell 5 mean | cell 5 max | cell 1 mean | cell 1 max |
 |---|---|---|---|---|
