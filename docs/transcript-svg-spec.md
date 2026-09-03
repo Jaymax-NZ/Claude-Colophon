@@ -95,6 +95,28 @@ fails on a phone. A change made and checked on a desktop looks correct and
 silently breaks the client it matters most for, so it wants an assertion in the
 generator rather than a note in a comment.
 
+### The destination must be a data URI
+
+Markdown `![]()` is the only channel -- inline HTML renders nowhere -- and what
+goes in the destination is itself a client difference:
+
+| destination | desktop | Android |
+|---|---|---|
+| `data:image/svg+xml;base64,…` | renders | renders |
+| `https://raw.githubusercontent.com/…/strip.svg` | **a link** | renders inline |
+| a GitHub `blob` page, with or without `?raw=1` | a link | `?raw=1` renders |
+| a repository-relative path, `strip.svg` or `docs/strip.svg` | a link | a link |
+| an absolute container path or `file://` URL | a link | a link |
+
+**A remote URL would be much cheaper than a literal** -- around 110 characters
+against 315, editable as a file rather than re-encoded, and a size change
+becomes two digits in a repository rather than a tool call at emission. It is
+ruled out only because the desktop turns it into a link instead of an image.
+
+Paths cannot work in principle: the transcript is not served from the
+repository, and the container's filesystem is reachable from nothing but the
+container, which is discarded when the session ends.
+
 ### Entity references are not decoded in link destinations
 
 `&lt;svg…&gt;` fails on both clients, and this one is worth stating separately
@@ -121,6 +143,9 @@ Android has two failure modes and they are at different layers.
   image and the URI was never looked at.
 - **A broken-image placeholder** -- the destination parsed, an image element
   exists, and the *loader* rejected the URI.
+- **A clickable link** -- the destination parsed and was then routed away from
+  the image loader entirely, because it is not a data URI. The most misleading
+  of the three, since something visibly appeared.
 
 Web and desktop show neither, because both layers there are lenient: raw spaces
 are accepted in a destination, and non-base64 payloads are accepted by the
