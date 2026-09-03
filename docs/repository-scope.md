@@ -3,11 +3,18 @@
 What this repository may contain, and what has to arrive from
 Repository-Identicon instead.
 
+![Which project writes what, and the one path from a repository to a webpage](repository-stack.svg)
+
 This repository is a consumer. Repository-Identicon specifies the derivation and
-every rendering produced from it, and `skills/repo-identicon/` here is a vendored
-copy held to those vectors. A rendering written here rather than vendored makes
-this copy something the standard does not describe. Fix the derivation there, and
-re-vendor.
+every rendering produced from it, and `skills/repo-identicon/repo-identicon.py`
+runs its generator rather than carrying a copy of either. A rendering written
+here is one the standard does not describe. Add it there, and re-run the
+generator.
+
+The green path in the figure ends at a webpage without passing through Claude
+Colophon: a forge reads `.identicon/repository-identicon.svg` out of the
+repository and renders it. A rendering written here rather than by the generator
+never appears in `.identicon/`, so it never reaches that path.
 
 ## The 4x raster
 

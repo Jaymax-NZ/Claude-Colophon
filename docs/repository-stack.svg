@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" width="900" height="620"
+     font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title>Which project writes what, and the one path from a repository to a webpage</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#2f9e68" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <style>
+    .th { font-size:14px; font-weight:500; fill:#1f2933 }
+    .ts { font-size:12px; font-weight:400; fill:#52606d }
+    .hp { stroke:#2f9e68; stroke-width:2.2; fill:none }
+    .ed { stroke:#94a3b8; stroke-width:1; fill:none }
+    rect.n { stroke-width:1 }
+  </style>
+
+  <rect x="0" y="0" width="900" height="620" fill="#ffffff"/>
+
+  <!-- the single path from a repository to a webpage -->
+  <path class="hp" d="M450 68 L450 92" marker-end="url(#ag)"/>
+  <path class="hp" d="M450 160 L450 188" marker-end="url(#ag)"/>
+  <path class="hp" d="M580 224 C660 224, 735 244, 735 296" marker-end="url(#ag)"/>
+  <path class="hp" d="M735 364 L735 392" marker-end="url(#ag)"/>
+
+  <!-- everything else -->
+  <path class="ed" d="M320 224 C240 224, 165 244, 165 296" marker-end="url(#a)"/>
+  <path class="ed" d="M165 364 L165 392" marker-end="url(#a)"/>
+  <path class="ed" d="M290 332 C350 332, 405 352, 405 392" marker-end="url(#a)"/>
+  <path class="ed" d="M140 460 C140 476, 110 476, 110 488" marker-end="url(#a)"/>
+  <path class="ed" d="M200 460 C200 476, 260 476, 260 488" marker-end="url(#a)"/>
+
+  <rect class="n" x="350" y="16" width="200" height="52" rx="4" fill="#eceff3" stroke="#94a3b8"/>
+  <text class="th" x="450" y="38" text-anchor="middle">&lt;repo&gt;</text>
+  <text class="ts" x="450" y="56" text-anchor="middle">its git remote URL</text>
+
+  <rect class="n" x="320" y="96" width="260" height="64" rx="4" fill="#f1e8fb" stroke="#8b5cf6"/>
+  <text class="th" x="450" y="124" text-anchor="middle">Repository-Identicon</text>
+  <text class="ts" x="450" y="143" text-anchor="middle">derivation, vectors, generator</text>
+
+  <rect class="n" x="320" y="192" width="260" height="64" rx="4" fill="#e5eefb" stroke="#3b82f6"/>
+  <text class="th" x="450" y="220" text-anchor="middle">&lt;repo&gt;/.identicon/</text>
+  <text class="ts" x="450" y="239" text-anchor="middle">settings.json · svg · png</text>
+
+  <rect class="n" x="40" y="296" width="250" height="64" rx="4" fill="#ddf3f0" stroke="#14b8a6"/>
+  <text class="th" x="165" y="324" text-anchor="middle">Claude Colophon</text>
+  <text class="ts" x="165" y="343" text-anchor="middle">reads it, writes the rule</text>
+
+  <rect class="n" x="40" y="392" width="250" height="64" rx="4" fill="#e5eefb" stroke="#3b82f6"/>
+  <text class="th" x="165" y="420" text-anchor="middle">identicon.md</text>
+  <text class="ts" x="165" y="439" text-anchor="middle">in &lt;repo&gt;/.claude/rules/</text>
+
+  <rect class="n" x="320" y="392" width="170" height="64" rx="4" fill="#fdf1dd" stroke="#f59e0b"/>
+  <text class="th" x="405" y="420" text-anchor="middle">Session title</text>
+  <text class="ts" x="405" y="439" text-anchor="middle">the tricolour</text>
+
+  <rect class="n" x="40" y="488" width="140" height="58" rx="4" fill="#fdf1dd" stroke="#f59e0b"/>
+  <text class="th" x="110" y="514" text-anchor="middle">Chat pane</text>
+  <text class="ts" x="110" y="532" text-anchor="middle">turn mark</text>
+
+  <rect class="n" x="190" y="488" width="140" height="58" rx="4" fill="#fdf1dd" stroke="#f59e0b"/>
+  <text class="th" x="260" y="514" text-anchor="middle">Console</text>
+  <text class="ts" x="260" y="532" text-anchor="middle">sextant pair</text>
+
+  <rect class="n" x="610" y="296" width="250" height="64" rx="4" fill="#e5eefb" stroke="#3b82f6"/>
+  <text class="th" x="735" y="324" text-anchor="middle">&lt;repo&gt;/README.md</text>
+  <text class="ts" x="735" y="343" text-anchor="middle">references the .svg</text>
+
+  <rect class="n" x="610" y="392" width="250" height="64" rx="4" fill="#fdf1dd" stroke="#f59e0b"/>
+  <text class="th" x="735" y="420" text-anchor="middle">Forge webpage</text>
+  <text class="ts" x="735" y="439" text-anchor="middle">renders the .svg</text>
+
+  <rect x="40" y="572" width="12" height="12" rx="2" fill="#f1e8fb" stroke="#8b5cf6"/>
+  <text class="ts" x="58" y="582">the standard</text>
+  <rect x="168" y="572" width="12" height="12" rx="2" fill="#e5eefb" stroke="#3b82f6"/>
+  <text class="ts" x="186" y="582">files in &lt;repo&gt;</text>
+  <rect x="308" y="572" width="12" height="12" rx="2" fill="#ddf3f0" stroke="#14b8a6"/>
+  <text class="ts" x="326" y="582">Claude Colophon</text>
+  <rect x="460" y="572" width="12" height="12" rx="2" fill="#fdf1dd" stroke="#f59e0b"/>
+  <text class="ts" x="478" y="582">where the mark appears</text>
+  <path class="hp" d="M660 578 L692 578"/>
+  <text class="ts" x="700" y="582">the path to a webpage</text>
+</svg>
