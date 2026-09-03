@@ -15,25 +15,76 @@ it goes in a README, and nothing here should change it. This describes a
 Three clients, one account, the same afternoon: Claude on Android, Claude Code on
 the web in Chrome, and Claude Desktop driving a remote session.
 
+### What the document must contain
+
+| | Android | web / desktop |
+|---|---|---|
+| `xmlns` | optional | **required** |
+| at least one of `viewBox` or `width`+`height` | **required** | required |
+| `fill` | optional (defaults black) | optional |
+
+Neither client needs both geometry attributes. Android takes the aspect ratio
+from whichever is present and the size from the column; the desktop takes the
+displayed size from `width`/`height` and falls back to `viewBox` without them.
+
+### How it must be encoded
+
+Six spellings of one identical document:
+
+| | desktop | Android |
+|---|---|---|
+| `;base64,` padded, lowercase | renders | renders |
+| `;base64,` with the padding stripped | renders | **fails** |
+| `;BASE64,` uppercase | renders | **fails** |
+| percent-escaped, any amount | renders | fails |
+| unescaped, raw | renders | fails |
+| no media type at all | fails | fails |
+
+`;charset=utf-8;base64,` also renders on both, so Android does parse media-type
+parameters properly -- it is not matching a fixed prefix. It then requires the
+`base64` token in lowercase and the payload correctly padded, neither of which
+RFC 2397 demands. **Emit exactly `data:image/svg+xml;base64,` and standard,
+padded, standard-alphabet base64.**
+
+The shape of that table is the danger: every deviation passes on a desktop and
+fails on a phone. A change made and checked on a desktop looks correct and
+silently breaks the client it matters most for, so it wants an assertion in the
+generator rather than a note in a comment.
+
+### How it fails, which says where it failed
+
+Android has two failure modes and they are at different layers.
+
+- **Nothing at all** -- no image element was created. A CommonMark link
+  destination cannot contain raw spaces, so the markdown parser never formed an
+  image and the URI was never looked at.
+- **A broken-image placeholder** -- the destination parsed, an image element
+  exists, and the *loader* rejected the URI.
+
+Web and desktop show neither, because both layers there are lenient: raw spaces
+are accepted in a destination, and non-base64 payloads are accepted by the
+loader. Every client difference recorded here is one of those two layers.
+
+### Sizing and presentation
+
 | behaviour | Android | web / desktop |
 |---|---|---|
-| `data:image/svg+xml;base64,` | renders | renders |
-| `data:image/svg+xml,` percent-encoded | failed once, see below | not retested |
-| `width` / `height` attributes | **ignored** | honoured |
-| `width` / `height` in `pt` | **ignored** | not retested |
-| `style="width:17px"` | **ignored** | not retested |
-| omitting `width`/`height` entirely | **ignored** | not retested |
-| omitting `viewBox` entirely | **ignored** | not retested |
+| `width` / `height` as the displayed size | **ignored** | honoured |
+| `width` / `height` in `pt` | ignored | not retested |
+| `style="width:17px"` | ignored | not retested |
 | `viewBox` aspect ratio | **honoured** | honoured |
 | a square SVG | wrapped in a bordered card | wrapped in a bordered card |
 | a letterboxed SVG | no card | no card |
 | first sight of a unique image | needs a tap | renders |
 | any later sight of the same bytes | renders, no tap | renders |
 
-The Android column is not a list of quirks to work around one at a time. It is
-one behaviour: **the mark is scaled to fill the column, and the only property
-that survives is the aspect ratio.** Six different ways of declaring a size were
-tried, including declaring none at all, and every one of them was overridden.
+The sizing column is not a list of quirks to work around one at a time. It is
+one behaviour: **on Android the mark is scaled to fill the column, and the only
+property that survives is the aspect ratio.** Five ways of declaring a size were
+tried -- the attributes, points, inline CSS, and omitting one or the other -- and
+every one was overridden. Omitting *both* is different in kind: with no aspect
+ratio to derive a height from there is nothing to draw, and the image does not
+render at all rather than rendering at the wrong size.
 
 ### The sizing law
 
@@ -81,7 +132,9 @@ now known to be terminal-only.
   correctness in every other consumer and gains nothing.
 - **`preserveAspectRatio="xMinYMid meet"`** pins the mark to the left edge. The
   default is `xMidYMid`, which centres it in the empty box.
-- **Base64, not percent-encoding** -- provisionally. See the caveat below.
+- **Base64, padded, lowercase token.** Measured, not assumed; see the encoding
+  table above.
+- **Keep `xmlns`.** The desktop refuses the document without it.
 - The ratio is the only number that varies, and `width` and `viewBox` must both
   carry it. Editing one and not the other letterboxes the mark inside the wrong
   box on any compliant renderer, and looks fine on Android — a divergence worth
@@ -132,19 +185,35 @@ Standard contour tracing; the same step potrace calls path decomposition.
 count of filled cells. One line, catches a mis-wound hole or a mis-chained loop,
 and belongs with the conformance vectors rather than here.
 
-## The one weak claim in here
+## What is measured and what is not
 
-**Percent-encoding is recorded as failing on Android on a single confounded
-trial.** The URI that failed differed from the ones that worked in two ways at
-once: it was percent-encoded *and* it declared a width against a mismatched
-viewBox. A mismatch ought to letterbox rather than fail, so the encoding is the
-likely cause -- but that is an inference, not the measurement the table implies.
+Everything in the tables above was observed on both clients, one property at a
+time, except where a cell says otherwise. Two habits produced most of the wrong
+turns on the way here and are worth inheriting:
 
-Everything else here was varied one property at a time. Re-run it as a
-single-variable test before relying on it: identical SVG bytes, one base64, one
-percent-encoded, both on a phone. Until then, base64 is the safe default on the
-evidence that it works everywhere, rather than on evidence that the alternative
-does not.
+**A blanket answer hides a client difference.** "Assume it renders on the
+desktop unless I say otherwise" cost a false conclusion that `xmlns` was
+optional -- the one variant where the desktop was the whole question was the one
+the blanket covered. Ask per variant, per client.
+
+**Vary one property.** The first percent-encoding trial changed the encoding
+*and* mismatched `width` against `viewBox`, and was recorded as a measurement
+for a day. A later single-variable run reached the same conclusion, which was
+luck rather than vindication.
+
+### Worth doing, not yet done
+
+An Android debug session would turn these rules into a mechanism. Connect the
+phone and open `chrome://inspect`: if the app appears, the transcript is a
+WebView and the computed style on the image element settles the sizing law
+directly, with a console error naming each rejection. If it does not appear the
+renderer is native, and `adb logcat` during a failing render should still name
+the decoder's complaint -- strict padding and a case-sensitive token is what
+Android's own `Base64.decode` does behind a `startsWith(";base64")` check, which
+would explain the whole encoding column at once.
+
+Not needed to ship. Needed to survive an app update without re-running all of
+this.
 
 ## The open decision
 
