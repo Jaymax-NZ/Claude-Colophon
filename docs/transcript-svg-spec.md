@@ -10,6 +10,31 @@ it goes in a README, and nothing here should change it. This describes a
 *transcript literal* — the same kind of thing as the base64 PNG already in the
 `CLAUDE.md` block, and it never becomes a file.
 
+## What this has to achieve
+
+Stated as constraints, because most of them turned out to be forced rather than
+chosen:
+
+1. **One mark, emitted at the end of every turn, legible on Android, on the web
+   and in the desktop app.** A session migrates between them mid-conversation --
+   this one went Android, then Chrome, then desktop -- so a mark sized for one
+   is wrong on the next within the same transcript.
+2. **The session cannot know where it is displayed.** Not merely unavailable:
+   undefined. Rendering happens after emission, possibly on several devices,
+   possibly in a scrollback days later. `CLAUDE_CODE_ENTRYPOINT` and the
+   session's `origin` both report where it *started*.
+3. **A per-platform size can therefore only be something the reader states**,
+   and that statement decays exactly as the mark does -- it goes stale at the
+   moment they switch devices, which is the same problem one layer up.
+4. **The size should be adjustable at output**, per reader and ideally per
+   platform.
+5. **The artifact should be as small as possible**, since it lives in a
+   repository and in `CLAUDE.md`.
+
+Constraints 4 and 5 pull against the encoding: raw SVG is editable by changing
+two digits, base64 is not editable at all, and Android accepts only base64. See
+**The cost model** below for what that forces.
+
 ## What the clients actually do
 
 Three clients, one account, the same afternoon: Claude on Android, Claude Code on
@@ -33,12 +58,31 @@ Six spellings of one identical document:
 
 | | desktop | Android |
 |---|---|---|
-| `;base64,` padded, lowercase | renders | renders |
+| `data:image/svg+xml;base64,` padded, lowercase | renders | renders |
+| `data:image/svg+xml;charset=utf-8;base64,` | renders | renders |
+| `data:IMAGE/SVG+XML;base64,` -- type uppercased | renders | renders |
 | `;base64,` with the padding stripped | renders | **fails** |
-| `;BASE64,` uppercase | renders | **fails** |
-| percent-escaped, any amount | renders | fails |
+| `;BASE64,` -- token uppercased | renders | **fails** |
+| `data:text/xml;base64,` | **fails** | renders |
+| percent-escaped, minimal or total | renders | fails |
 | unescaped, raw | renders | fails |
+| entity-escaped (`&lt;`, `&#32;`) | **fails** | fails |
 | no media type at all | fails | fails |
+| inline HTML `<img src=... width=...>` | **fails** | **fails** |
+
+Three of those rows are the interesting ones.
+
+**The type is compared case-insensitively and the token is not.** `IMAGE/SVG+XML`
+is accepted on Android while `;BASE64` is refused, in the same string. That is
+the closest thing to seeing the implementation that we have: a normalised lookup
+for the media type, and a literal comparison for the transfer encoding.
+
+**`text/xml` renders on Android and fails on the desktop** -- the one place
+being lax loses you the desktop rather than the phone.
+
+**Inline HTML is not rendered anywhere.** Every mark must go through markdown
+`![]()`, which is *why* the aspect ratio is the only size control that exists:
+there is no element to put a `width` on.
 
 `;charset=utf-8;base64,` also renders on both, so Android does parse media-type
 parameters properly -- it is not matching a fixed prefix. It then requires the
@@ -50,6 +94,23 @@ The shape of that table is the danger: every deviation passes on a desktop and
 fails on a phone. A change made and checked on a desktop looks correct and
 silently breaks the client it matters most for, so it wants an assertion in the
 generator rather than a note in a comment.
+
+### Entity references are not decoded in link destinations
+
+`&lt;svg…&gt;` fails on both clients, and this one is worth stating separately
+because it is not about images. As far as I can recall the CommonMark
+specification says entity and numeric references are recognised in link
+destinations -- I could not check, the domain is blocked from this environment --
+but the finding does not depend on that. The escaped and unescaped spellings of
+one identical URL were compared directly: the raw one renders on the desktop,
+the entity one does not.
+
+The mechanism is that the payload arrives with `&lt;svg` as *character data
+rather than markup*, so the document has no tags at all and no root element.
+That is a harder failure than a bad URL, which is why it fails even on the
+lenient desktop loader.
+
+Anything relying on an entity inside a URL will silently fail on both clients.
 
 ### How it fails, which says where it failed
 
@@ -185,6 +246,34 @@ Standard contour tracing; the same step potrace calls path decomposition.
 count of filled cells. One line, catches a mis-wound hole or a mis-chained loop,
 and belongs with the conformance vectors rather than here.
 
+## The cost model
+
+Two costs, and they are paid at different rates. **`CLAUDE.md` is read once per
+session. The literal is emitted on every turn.** Everything else follows from
+that asymmetry.
+
+**Adjusting the size at output is not free.** Base64 cannot be edited in place,
+and a model cannot base64 in its head, so every size change costs a tool call at
+emission -- paid every turn it happens. Keeping raw SVG in the file to make the
+digits editable does not avoid this, because Android needs the encoded form
+regardless.
+
+**So carry a menu, not a source.** Three or four pre-encoded literals at
+different ratios cost a few hundred bytes once per session, and make selection
+free: copy the line, no encoding, no tool call. Choosing wrongly with a single
+literal costs every turn, forever. A small menu is strictly cheaper than one
+editable source.
+
+**Changing size has a second cost.** Images are cached by content and the first
+sight of a unique byte sequence requires a tap on Android. Every new size is a
+new byte sequence, so frequent adjustment spends the very glanceability the mark
+exists for. A stable choice is tapped once.
+
+**And the two clients read different attributes.** The desktop takes its size
+from `width`/`height`; Android takes it from the viewBox ratio against the
+column. One literal serves both, but the two numbers must be chosen together and
+nothing checks that they agree -- an easy edit to get half right.
+
 ## What is measured and what is not
 
 Everything in the tables above was observed on both clients, one property at a
@@ -201,19 +290,27 @@ the blanket covered. Ask per variant, per client.
 for a day. A later single-variable run reached the same conclusion, which was
 luck rather than vindication.
 
-### Worth doing, not yet done
+### The mechanism route was tried and is closed
 
-An Android debug session would turn these rules into a mechanism. Connect the
-phone and open `chrome://inspect`: if the app appears, the transcript is a
-WebView and the computed style on the image element settles the sizing law
-directly, with a console error naming each rejection. If it does not appear the
-renderer is native, and `adb logcat` during a failing render should still name
-the decoder's complaint -- strict padding and a case-sensitive token is what
-Android's own `Base64.decode` does behind a `startsWith(";base64")` check, which
-would explain the whole encoding column at once.
+An Android debug session would have turned these rules into a mechanism. It was
+attempted on a Pixel 10 Pro over wireless debugging, package
+`com.anthropic.claude`:
 
-Not needed to ship. Needed to survive an app update without re-running all of
-this.
+- `adb shell cat /proc/net/unix | grep webview_devtools` returns nothing, so
+  there is **no debuggable WebView**. The transcript is rendered natively and
+  `chrome://inspect` has nothing to attach to. The sizing behaviour is a native
+  view's content scaling, not CSS -- there is no stylesheet to override.
+- `adb logcat` filtered to the app's pid, across a render of four fresh failing
+  variants, produced **zero lines**. Release logging is stripped.
+
+So the black-box rules above are the answer, not a stopgap. The
+`Base64.decode`-behind-a-`startsWith` hypothesis remains the best explanation of
+the encoding column and remains unverified.
+
+### Still unprobed
+
+Whether there is a payload size cap. It bounds how large a mark can ever be and
+has never been tested.
 
 ## The open decision
 
