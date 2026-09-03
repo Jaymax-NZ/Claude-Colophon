@@ -210,8 +210,12 @@ so it is a separate control from `--cell` and has no cap.
 
 ## Generating the path
 
+The vector carries the repository's own cell size, the one the raster uses --
+it is the same mark, and the 1-unit border against that cell is what gives it
+its proportions.
+
 Three encodings of the same 5x5 grid, measured over 500 identicons from real
-keys, as characters of `d`:
+keys, as characters of `d`, at each end of the cell range:
 
 | method | cell 5 mean | cell 5 max | cell 1 mean | cell 1 max |
 |---|---|---|---|---|
@@ -307,28 +311,9 @@ So the black-box rules above are the answer, not a stopgap. The
 `Base64.decode`-behind-a-`startsWith` hypothesis remains the best explanation of
 the encoding column and remains unverified.
 
-### Still unprobed
-
-Whether there is a payload size cap. It bounds how large a mark can ever be and
-has never been tested.
-
-## The open decision
-
-The byte counts above have two columns because the cell size is not free in a
-vector, though not for the reason it matters in a raster.
-
-The border is 1 unit regardless of cell, so the cell sets the *proportion* of
-margin to mark: 1/27 at cell 5, 1/7 at cell 1. Unit cells cost 8 characters
-fewer and give a visibly fatter frame; cell 5 costs 8 more and matches the
-raster exactly. Scaling cannot reconcile them — scaling multiplies the border
-too, which is what it means for a proportion to be a proportion.
-
-**Whether the vector should match the raster's proportions, or be allowed its
-own, is a design call rather than a measurement.** It has not been made.
-
 ## What this costs
 
-A typical contour at cell 1 is about 211 bytes of SVG and a 315-character
-literal, against 234 for the 62px PNG. An 81-character premium on every turn,
+A typical contour is about 211 bytes of SVG and a 315-character literal,
+against 234 for the 62px PNG. An 81-character premium on every turn,
 for a mark that is the right size on a phone, in a browser and in the desktop
 remote, with no detection and no choice to make.
