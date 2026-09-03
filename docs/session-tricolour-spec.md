@@ -15,6 +15,35 @@ document for the decisions, not for the code. One phrase changed on import — "
 three coloured squares" is written "the tricolour", per the naming settled on
 2026-08-30, because the palette also contains circles.
 
+## What else came off that branch, and what did not
+
+The branch is being deleted from the remote, so this is the record of what it
+held. Nothing below needs to be read there again.
+
+| on the branch | outcome |
+|---|---|
+| `docs/session-tricolour-spec.md` | this file |
+| `skills/session-tricolour/session-tricolour.py`, 501 lines | **not taken.** `skills/tricolour/tricolour.py` does the membership test in a helper and states the rules in `SKILL.md`, which is the split main chose |
+| `skills/session-tricolour/SKILL.md` | **not taken.** Its "Removing it", "Turning it on" and "Reapplying" sections state decisions this file already carries |
+| the tagging section in `CLAUDE.md`, 98 lines | **not taken.** Main writes its own, under "Carry the identicon in the session title" |
+| `PERMISSIONS.md`, a section for the script | **not taken.** Main documents `tricolour.py` already, and the branch's version describes `--enable`/`--disable` writes that main's helper does not do |
+| naming `Claude Colophon` where the prose said "this plugin" | taken, in `README.md` and `PERMISSIONS.md` |
+| "no scheduled task, no cron, no daemon" | taken, in `PERMISSIONS.md` |
+| four loose `.identicon/` artifacts | **not taken.** They arrived in main separately, and the generator has since replaced the loose set with `settings.json` |
+
+## Three decisions here that the shipped skill does not implement
+
+Recorded so that deleting the branch does not lose them. Each is a change to
+`skills/tricolour/SKILL.md` or to the `CLAUDE.md` section that invokes it.
+
+1. **Tag at the end of a turn, not on an early one.** See *Timing* below. The
+   shipped instruction says "on an early turn", which is inside the window the
+   auto-titler overwrites.
+2. **Confirm before renaming any session but this one.** See the ladder under
+   *Reapply*. The shipped skill renames every match without asking.
+3. **Removal is per-repository and removes the instruction.** See *Removal*.
+   The shipped skill has no removal path at all.
+
 ## Whose score is whose
 
 Three projects, and the boundary between them is the thing most often got wrong
@@ -67,12 +96,18 @@ place it happens.
 
 ### Matching is not deriving
 
-Deciding *which sessions belong to this repository* compares normalised remote
-URLs, using the generator's own `normalise_remote_url`. That answers "is this
-the same repository", not "what colour is it", and it never produces a square.
-The distinction matters because the two look alike from a distance: one reads a
-URL to compare it, the other reads a URL to invent a mark. Only the first is
-permitted.
+Deciding *which sessions belong to this repository* compares marks. That answers
+"is this the same repository", not "what colour is it", and it never produces a
+tricolour. The distinction matters because the two look alike from a distance:
+one reads an identity to compare it, the other reads an identity to invent a
+mark. Only the first is permitted.
+
+This document originally specified the comparison as normalised remote URLs,
+using the generator's `normalise_remote_url`. `skills/tricolour/tricolour.py`
+compares the tricolour itself instead, which is better in two ways: it needs
+nothing from the generator, and it groups two checkouts of one repository in
+separate git worktrees, which have different working directories and the same
+mark.
 
 ## Three states, one switch
 
@@ -118,8 +153,11 @@ peer, no second process, and no coordination.
 change back, emoji intact.
 
 **Reported not working** on Claude Desktop, where a session could rename every
-session except itself. Unverified, and worth re-testing before anything is built
-on either answer.
+session except itself. **That report is false**, and was corrected on
+2026-08-30: `set_session_title` accepts the literal `"self"` and renames the
+running session on Claude Desktop. The claim came from generalising
+`get_session`'s refusal of the current session to a tool that does not refuse
+it, and it produced a design for an external renamer that is not needed.
 
 So the procedure is: **try, then read back**. If the title comes back carrying
 the triple, done. If it does not, this surface cannot self-tag, and the tag has
