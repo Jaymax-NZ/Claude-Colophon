@@ -5,6 +5,10 @@ rather than a raster. Written for whoever is working on the identicon generator:
 everything here was measured against real clients on 2 September 2026, and none
 of it is derivable from the SVG specification alone.
 
+The generator's own repository has been keeping a record of this too. Where the
+two disagree, that one is closer to the work; this is the transcript-side view,
+written from the client testing rather than from the generator.
+
 **This is not `.identicon/repository-identicon.svg`.** That artifact is square,
 it goes in a README, and nothing here should change it. This describes a
 *transcript literal* — the same kind of thing as the base64 PNG already in the
@@ -285,6 +289,55 @@ Standard contour tracing; the same step potrace calls path decomposition.
 **The check that makes it safe:** the shoelace area of the loops must equal the
 count of filled cells. One line, catches a mis-wound hole or a mis-chained loop,
 and belongs with the conformance vectors rather than here.
+
+### Techniques not yet in the recommended form
+
+Five ideas that arrived late and are better than what is above, with their test
+status, which is mostly "none".
+
+**The border as a negative viewBox origin.** `viewBox="-1 -1 84 7"` puts the
+1-unit margin in the coordinate window instead of offsetting every coordinate in
+the path. The grid stays at 0-5, so the path keeps single-digit numbers and the
+margin is paid for twice rather than in every `M`. Strictly better than
+offsetting, and better than what the generator does. **Renders on both.**
+
+**`slice` against a square viewport, cropping the letterbox away.** With
+`width="28" height="28"` and that viewBox, `preserveAspectRatio="xMinYMid slice"`
+scales to cover -- max(28/84, 28/7) = 4 -- so the visible window is x from -1 to
+6: exactly the grid and its margin, at 4x, filling the square. The other 77
+units of empty strip are cropped rather than drawn. **The same file can
+therefore present as a compact square where `width`/`height` are honoured and as
+a 12:1 letterbox where only the ratio is** -- which is as close to per-client
+sizing as anything gets, given the client cannot be detected. **Untested.**
+
+**Alt text as the fallback.** `![<text form>](data:…)` -- when an image fails,
+the alt text is what appears, so the mark degrades to something legible instead
+of a broken placeholder. Free when the image works. **Untested.**
+
+**Sextants rather than octants.** BLOCK SEXTANT at U+1FB00 is Unicode 13; the
+octants `text-identicon.py` uses are Unicode 16 and come out as tofu on Android.
+A 5x5 grid fits three sextant characters by two lines, the same shape as the
+octant form. **Font coverage untested, and it is the thing to check first**,
+because it decides whether the alt-text fallback is real.
+
+**`shape-rendering="crispEdges"`**, 29 bytes, turning off anti-aliasing. At an
+integer scale there is nothing to feather, so it should be invisible on a
+desktop; on a phone the mark is scaled to a fraction of a column, cell
+boundaries land mid-pixel, and soft edges are possible. **Untested.**
+
+## A trap this branch is sitting on
+
+`CLAUDE.md` in Claude Colophon currently carries the mark at cell 12, a 62-pixel
+canvas. `installed_cell()` recovers a repository's chosen size by matching the
+installed PNG's width against the five canvases `CELLS` allows -- 7, 12, 17, 22
+and 27. **62 matches none of them**, so it returns `None`, `install()` falls back
+to `DEFAULT_CELL`, and a plain `/repo-identicon` re-run resizes the mark to 17
+pixels without saying anything.
+
+Nothing catches it. The re-run reports success, the artifacts stay consistent
+with each other, and the only symptom is that the mark is small again. Raising
+the cap fixes it; until then any repository whose cell falls outside that table
+is one re-run away from losing its size.
 
 ## The cost model
 
