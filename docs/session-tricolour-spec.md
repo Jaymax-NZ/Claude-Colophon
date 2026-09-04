@@ -17,8 +17,19 @@ three coloured squares" is written "the tricolour", per the naming settled on
 
 ## What else came off that branch, and what did not
 
-The branch is being deleted from the remote, so this is the record of what it
-held. Nothing below needs to be read there again.
+**This accounting is incomplete, and the branch has not been deleted.** It was
+written on 2026-09-04 against the seven commits the branch carried on
+2026-08-21. Nine more had landed on it on 2026-09-03 and the audit never saw
+them. They add `docs/transcript-svg-spec.md` — 408 lines, client-measured, on
+the same subject as `docs/turn-mark-rendering.md` — plus `docs/strip.svg` and
+`strip.svg`. None of that is in `main`.
+
+The merge commit `24cfd1e` repeats the same error, saying both cloud branches
+were salvaged and neither needs reading again. Treat this table as covering
+only what the branch held in August, and see the `transcript-svg-salvage`
+branch for the rest.
+
+The table below is what came off those seven commits.
 
 | on the branch | outcome |
 |---|---|
