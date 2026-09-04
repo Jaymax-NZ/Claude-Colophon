@@ -17,14 +17,27 @@ Claude-Colophon, except where it names another date.
 entry in this section has been asserted impossible at least once and then shown
 to be determinable, and the rendering question three separate times — once by
 opening chats in different interfaces to demonstrate it. A session that cannot
-find the signal has not looked; it has not discovered a limit. The standing rule
-is in `~/.claude/CLAUDE.md` under *Identicon rendering*.
+find the signal has not looked; it has not discovered a limit.
+
+The rendering rule is split across two files, and citing the wrong one is how
+the test gets missed. The **test** is in this repository's
+`.claude/rules/identicon.md` under *Which rendering to emit*; it is generated
+from `.identicon/settings.json` and is present in every checkout.
+`~/.claude/CLAUDE.md` under *Identicon rendering* holds **preferences** only —
+block size, sextant against octant, whether to tag session titles — and
+explicitly declines to decide image against text.
 
 **Which rendering to emit.** The presence of `mcp__ccd*` tools means a
 desktop-hosted pane that renders markdown images, so emit the PNG. Their absence
 means a console or headless run, so emit the sextant plus the tricolour. The
 tool check costs nothing. `CLAUDE_CODE_ENTRYPOINT` (`cli` against
 `claude-desktop`) and `TERM` corroborate it at the cost of a command.
+
+The predicate is determinable but **known to be wrong for at least one
+surface**. `docs/turn-mark-rendering.md` records that a cloud session has no
+`mcp__ccd*` tools and renders images correctly, so the absent branch sends it
+text it did not need. Determinable and correct are different claims; this one
+is the first and not yet the second.
 
 **Where the session executes.** `CLAUDE_CODE_HOST_SESSION_ID` prefixed `local_`,
 `entrypoint: claude-desktop` and `kind: interactive` in
