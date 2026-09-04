@@ -1,7 +1,7 @@
 {
   "name": "claude-colophon",
-  "version": "0.1.0",
-  "description": "Give every repository an identicon, and sign each turn with it — so parallel Claude sessions are distinguishable at a glance",
+  "version": "0.2.0",
+  "description": "Give every repository an identicon, sign each turn with it, and put its tricolour at the front of the session title — so parallel Claude sessions are distinguishable at a glance",
   "author": {
     "name": "Justin Maxwell"
   }

@@ -52,6 +52,11 @@ def load():
 
 skill = load()
 
+# The generated constants document, taken from the installer rather than
+# repeated here: if it ever moves back into a file the user owns, these tests
+# should follow it there and keep asserting it is rewritten wholesale.
+LOCAL_NAME = skill.LOCAL_NAME
+
 
 def git(root, *args):
     subprocess.run(["git", "-C", str(root), *args], check=True,
@@ -179,7 +184,7 @@ class TestItRefusesRatherThanGuesses(TreeCase):
     def test_generator_flags_are_only_taken_after_a_separator(self):
         """`--block` is the generator's, and this script must not silently
         swallow it as one of its own."""
-        extra = skill.parse(["x", str(self.root), "--", "--block", "5"])[3]
+        extra = skill.parse(["x", str(self.root), "--", "--block", "5"])[2]
         self.assertEqual(["--block", "5"], extra)
 
         with self.assertRaises(SystemExit):
@@ -247,13 +252,88 @@ class TestEndToEnd(unittest.TestCase):
         git(self.root, "remote", "add", "origin", REMOTE)
         self.addCleanup(self._tmp.cleanup)
 
-    def test_the_literal_matches_the_png_the_generator_wrote(self):
+    def test_a_literal_matches_the_png_the_generator_wrote(self):
+        """The rule's block-5 entry and the committed raster are one image."""
         result = run(str(self.root))
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
         png = (self.root / PNG_NAME).read_bytes()
         expected = base64.b64encode(png).decode("ascii")
-        self.assertIn(expected, (self.root / INSTRUCTIONS).read_text())
+        self.assertIn(expected, (self.root / LOCAL_NAME).read_text())
+
+    def test_the_repository_s_own_claude_md_is_not_written(self):
+        """The instructions live in the rule now. A repository's CLAUDE.md is
+        its own, and this tool no longer edits it at all."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        self.assertFalse((self.root / INSTRUCTIONS).exists())
+
+    def test_a_legacy_section_is_reported_but_not_removed(self):
+        """The installed section invites a repository to rewrite its prose and
+        promises a re-run will leave that wording alone. Deleting it wholesale
+        would break the promise, so it happens only when asked."""
+        legacy = f"# Project\n\n{skill.IDENTICON_HEADING}\n\nOld words.\n"
+        (self.root / INSTRUCTIONS).write_text(legacy, encoding="utf-8")
+
+        result = run(str(self.root))
+        self.assertIn("still carries an identicon section", result.stdout)
+        self.assertIn("Old words.", (self.root / INSTRUCTIONS).read_text())
+
+        self.assertEqual(0, run(str(self.root), "--retire").returncode)
+        text = (self.root / INSTRUCTIONS).read_text()
+        self.assertNotIn(skill.IDENTICON_HEADING, text)
+        self.assertIn("# Project", text)
+
+    def test_the_local_document_carries_every_block_size(self):
+        """The point of the file: the reader picks, so all five must be there."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / LOCAL_NAME).read_text()
+        for block in (1, 2, 3, 4, 5):
+            with self.subTest(block=block):
+                self.assertIn(f"- block {block}: ![](data:image/png;base64,", text)
+
+    def test_the_local_document_carries_the_text_renderings(self):
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / LOCAL_NAME).read_text()
+        for heading in ("## Tricolour", "## Sextant", "## Octant"):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+
+    def test_the_rule_states_how_to_choose_between_the_renderings(self):
+        """Image-versus-text is an environment fact, not a taste, so the test
+        for it ships with every repository rather than living in one user's
+        preference file. Losing it is not hypothetical: without an explicit
+        test the image wins by default and lands in console sessions as
+        unreadable base64, which has happened more than once."""
+        self.assertEqual(0, run(str(self.root)).returncode)
+        text = (self.root / LOCAL_NAME).read_text()
+        self.assertIn("mcp__ccd*", text)
+        self.assertIn("## Which rendering to emit", text)
+        self.assertIn("CLAUDE_CODE_ENTRYPOINT", text)
+
+    def test_no_rule_writes_no_rule(self):
+        self.assertEqual(0, run(str(self.root), "--no-rule").returncode)
+        self.assertFalse((self.root / LOCAL_NAME).exists())
+
+    def test_a_second_run_leaves_the_local_document_untouched(self):
+        self.assertEqual(0, run(str(self.root)).returncode)
+        before = (self.root / LOCAL_NAME).read_bytes()
+        self.assertEqual(0, run(str(self.root)).returncode)
+        self.assertEqual(before, (self.root / LOCAL_NAME).read_bytes())
+
+    def test_the_user_s_own_local_file_is_never_touched(self):
+        """CLAUDE.local.md is the documented place for a user's own project
+        preferences. This plugin writes a file it owns outright instead, because
+        sharing one with hand-written content means parsing that content
+        correctly on every run and destroying it when the parse is wrong."""
+        mine = self.root / "CLAUDE.local.md"
+        content = "# Mine\n\nSandbox URL: http://localhost:9999\n"
+        mine.write_text(content, encoding="utf-8")
+
+        self.assertEqual(0, run(str(self.root)).returncode)
+
+        self.assertEqual(content, mine.read_text(encoding="utf-8"))
+        self.assertTrue((self.root / LOCAL_NAME).exists())
+        self.assertNotEqual(LOCAL_NAME, "CLAUDE.local.md")
 
 
 if __name__ == "__main__":

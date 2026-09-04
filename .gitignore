@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# `.claude/rules/identicon.md` is deliberately NOT ignored. It holds every
+# rendering variant rather than a chosen one, so every checkout derives the same
+# file from the same settings and there is no preference in it to impose on
+# anyone. Committing it is what makes it present in every worktree, since
+# `git worktree add` materialises tracked files only.
