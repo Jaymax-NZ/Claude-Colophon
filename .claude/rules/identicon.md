@@ -38,6 +38,11 @@ Which *size*, and sextant versus octant, are reader's choices, stated once
 in `~/.claude/CLAUDE.md` and applying to every repository with an
 identicon. Absent a stated choice, use block 3 and sextant.
 
+A text rendering is monochrome. A sextant or octant is one glyph covering
+several cells and cannot be coloured per cell, so the colour rides in the
+tricolour beside it -- which is also how it survives a channel that strips
+ANSI.
+
 **Never base64 another file to make the mark.** The literals below are the
 only ones. `-128`, `-256` and `@4x` in `.identicon/` exist for favicons,
 avatars and displays that scale; embedded in a reply they render as a large
@@ -72,9 +77,18 @@ settings. Choosing between them is a reader's business, and that choice
 belongs in `~/.claude/CLAUDE.md`, where it applies to every repository with
 an identicon rather than to this one.
 
+It carries no `paths:` frontmatter, deliberately. An unscoped rule is
+re-injected from disk after compaction, like the project-root `CLAUDE.md`; a
+scoped one is reloaded only when a file it matches is read, and a mark
+emitted on every turn must not depend on that.
+
 ## Turn mark
 
 One per block size. Emit the one matching your size preference.
+
+Each is a PNG of the identicon: a 5x5 grid inside a one-pixel border,
+derived from the repository's identity rather than from its path, so it is
+the same in every checkout on every machine.
 
 - block 1: ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAHklEQVR4nGMgCM7In/oPwuhsDAV4JUjTCZNEpgkCAGj0LfXTkuivAAAAAElFTkSuQmCC)
 - block 2: ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAALklEQVR4nGMgC5yRP/UfGRMSJ10DLgU4FZKsAZdCov1AsU0YCinWgItPuQZiAACL8bfRn65LrwAAAABJRU5ErkJggg==)
