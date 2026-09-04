@@ -33,6 +33,7 @@ turn a separate behaviour on or off on the way past.
 """
 
 import base64
+import json
 import os
 import re
 import shutil
@@ -68,18 +69,24 @@ def find_generator():
         "Repository-Identicon, or check it out beside this repository.")
 
 
-def run_generator(path, extra=()):
+def run_generator(path, extra=(), fatal=True):
     """Run `apply` against `path`. The generator's own output goes to the user.
 
-    Its exit status is passed through rather than interpreted. It refuses for
-    reasons this script has no business second-guessing -- a mapping version it
-    will not draw, a path outside a repository -- and each refusal already
-    carries the remedy in its message.
+    Returns its exit status. With `fatal`, a non-zero status also exits this
+    script, because a write path must not continue past a generator that
+    refused. It refuses for reasons this script has no business
+    second-guessing -- a mapping version it will not draw, a path outside a
+    repository -- and each refusal already carries the remedy in its message.
+
+    `fatal=False` is for `--check`, where a non-zero status means "these
+    artifacts would change" rather than "stop". The rule file is checked
+    afterwards and reports separately.
     """
     command = [*find_generator(), "apply", *extra, path]
     completed = subprocess.run(command)
-    if completed.returncode != 0:
+    if completed.returncode != 0 and fatal:
         raise SystemExit(completed.returncode)
+    return completed.returncode
 
 
 # --------------------------------------------------------------------------
@@ -260,6 +267,237 @@ deterministic. This is the second of the two, chosen knowingly.
 """
 
 
+# --------------------------------------------------------------------------
+# The local document. Repository constants, every variant a user might pick,
+# written to a gitignored file so the choice of which to use stays with the
+# reader rather than with whoever ran the generator last.
+#
+# **It is not `CLAUDE.local.md`.** That file is the documented place for a
+# user's own project preferences -- sandbox URLs, test data -- and it exists in
+# repositories that have never heard of this plugin. A generated document must
+# not share a file with hand-written content, because keeping them apart then
+# depends on parsing the user's prose correctly on every run, and the failure
+# mode is destroying it.
+#
+# `.claude/rules/` is the purpose-built alternative: files there load at launch
+# with the same priority as `.claude/CLAUDE.md`, one file per topic, so this one
+# can be owned outright and rewritten without reading anything first.
+# Named for the subject, not for today's contents. It holds constants now;
+# anything else per-checkout and identicon-shaped belongs here too, and a file
+# called `identicon-constants.md` would have to be renamed to accept it.
+#
+# **No `paths:` frontmatter, deliberately.** An unscoped rule is re-injected
+# from disk after compaction, exactly like the project-root CLAUDE.md. A scoped
+# one is only reloaded when Claude reads a file it matches, which for a mark
+# emitted on every turn would mean it silently stops being available partway
+# through a long session.
+LOCAL_NAME = ".claude/rules/identicon.md"
+SETTINGS_NAME = f"{DIRECTORY}/settings.json"
+
+BLOCKS = (1, 2, 3, 4, 5)
+
+
+def _settings(root):
+    """The generator's settings for this repository, or a refusal."""
+    path = _within(root, os.path.join(root, SETTINGS_NAME))
+    raw = _read(path)
+    if raw is None:
+        raise SystemExit(f"{SETTINGS_NAME} is missing; run the generator first.")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"cannot parse {path}: {error}")
+
+
+def _rendered_png(root, block):
+    """One block size as PNG bytes, asked of the generator.
+
+    The sizes are not in settings, so they are requested rather than derived.
+    Five subprocesses, once per repository, is the right price for never
+    computing a pixel here.
+    """
+    command = [*find_generator(), "render", "--block", str(block),
+               "--format", "png", "--out", "-", root]
+    done = subprocess.run(command, capture_output=True)
+    if done.returncode != 0:
+        raise SystemExit(done.stderr.decode("utf-8", "replace").strip()
+                         or f"generator failed rendering block {block}")
+    return done.stdout
+
+
+def local_document(root):
+    """Every variant, laid out for a reader to choose from."""
+    settings = _settings(root)
+    renders = settings.get("renders", {})
+    drawing = renders.get("blockDrawing", {})
+
+    lines = [
+        "# Identicon",
+        "",
+        "## Sign every response with this repository's identicon",
+        "",
+        "Emit the mark, verbatim, as the last line of every response in this",
+        "repository. Nothing after it. Which of the two renderings to use is",
+        "decided by the test under *Which rendering to emit*, below.",
+        "",
+        "**Also emit it immediately before asking the user anything** -- as the last",
+        "line of the text preceding a question, including before a tool call that",
+        "puts a question to them. A turn that ends in a question may never reach a",
+        "turn-end at all, so it is both the turn most likely to lose the mark and the",
+        "one where the reader most needs it: they are being asked to stop and decide,",
+        "and which project is asking is part of the question.",
+        "",
+        "## Which rendering to emit",
+        "",
+        "There are two, and choosing between them is a **test, not a judgement**.",
+        "Check whether this session has any `mcp__ccd*` tools:",
+        "",
+        "- **Present** -- a desktop-hosted pane, which renders markdown images.",
+        "  Emit one of the literals from `## Turn mark`, and nothing else.",
+        "- **Absent** -- a console session or a headless `claude -p` run, where a",
+        "  `data:` URI arrives as a wall of base64 and nothing else. Emit the",
+        "  `## Sextant` block, then a space, then the `## Tricolour` value.",
+        "",
+        "Those tools are injected by the desktop app, so asking whether they exist",
+        "*is* the question asked directly. `CLAUDE_CODE_ENTRYPOINT` (`cli` versus",
+        "`claude-desktop`) and `TERM` corroborate it at the cost of a command; the",
+        "tool check costs nothing.",
+        "",
+        "**This is not a preference and does not belong in a preference file.** An",
+        "earlier version said only \"where a terminal needs the pattern\", left the",
+        "test unstated, and the image won by default -- emitted into console",
+        "sessions as unreadable base64 more than once.",
+        "",
+        "Which *size*, and sextant versus octant, are reader's choices, stated once",
+        "in `~/.claude/CLAUDE.md` and applying to every repository with an",
+        "identicon. Absent a stated choice, use block 3 and sextant.",
+        "",
+        "A text rendering is monochrome. A sextant or octant is one glyph covering",
+        "several cells and cannot be coloured per cell, so the colour rides in the",
+        "tricolour beside it -- which is also how it survives a channel that strips",
+        "ANSI.",
+        "",
+        "**Never base64 another file to make the mark.** The literals below are the",
+        "only ones. `-128`, `-256` and `@4x` in `.identicon/` exist for favicons,",
+        "avatars and displays that scale; embedded in a reply they render as a large",
+        "bordered card rather than an inline mark, because the client sizes the image",
+        "from its own pixel dimensions and raw `<img width>` is printed as literal",
+        "text. Observed 2026-09-02 in a cloud session, which had no copy of this rule",
+        "and reached for a raster instead.",
+        "",
+        "**Never assemble the tricolour yourself.** Use `renders.tricolour` from",
+        "`.identicon/settings.json`, or the `## Tricolour` value below, verbatim.",
+        "The shape-and-colour pairs beside it in settings are the generator's",
+        "workings, not an instruction to rebuild the string -- the same cloud session",
+        "produced a different arrangement of the right colours by doing that.",
+        "",
+        "**Why this is an instruction rather than a hook**, given that an instruction",
+        "depends on compliance and a hook does not: no hook output field can display",
+        "an image. A hook's `systemMessage` arrives as plain text, one event-name",
+        "prefix per line. The only channel in a GUI chat client that renders markdown",
+        "is an assistant message, and only the model writes those. So the",
+        "deterministic mechanism cannot render, and the mechanism that renders cannot",
+        "be made deterministic. This is the second of the two, chosen knowingly.",
+        "",
+        "## About this file",
+        "",
+        "Generated from `.identicon/settings.json` and rewritten in full on every",
+        "run of `/repo-identicon`. **Do not edit it** -- put anything of your own in",
+        "`CLAUDE.local.md`, which this plugin never touches.",
+        "",
+        "Committed, because nothing in it is anyone's preference: it holds every",
+        "rendering variant, and every checkout derives the same ones from the same",
+        "settings. Choosing between them is a reader's business, and that choice",
+        "belongs in `~/.claude/CLAUDE.md`, where it applies to every repository with",
+        "an identicon rather than to this one.",
+        "",
+        "It carries no `paths:` frontmatter, deliberately. An unscoped rule is",
+        "re-injected from disk after compaction, like the project-root `CLAUDE.md`; a",
+        "scoped one is reloaded only when a file it matches is read, and a mark",
+        "emitted on every turn must not depend on that.",
+        "",
+        "## Turn mark",
+        "",
+        "One per block size. Emit the one matching your size preference.",
+        "",
+        "Each is a PNG of the identicon: a 5x5 grid inside a one-pixel border,",
+        "derived from the repository's identity rather than from its path, so it is",
+        "the same in every checkout on every machine.",
+        "",
+    ]
+    for block in BLOCKS:
+        literal = (f"![](data:image/png;base64,"
+                   f"{base64.b64encode(_rendered_png(root, block)).decode('ascii')})")
+        lines.append(f"- block {block}: {literal}")
+
+    lines += ["", "## Tricolour", "", renders.get("tricolour", "(absent)"), ""]
+
+    for name in ("sextant", "octant", "ascii"):
+        rows = drawing.get(name)
+        if not rows:
+            continue
+        lines += [f"## {name.capitalize()}", "", "```", *rows, "```", ""]
+
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def local_is_current(root):
+    """Whether the rule file on disk is what this version would write.
+
+    The rule file goes stale on its own schedule. Its text is written here, so
+    it changes when this script changes -- a section added to
+    `local_document` leaves every already-installed rule file missing that
+    section, while the `.identicon/` artifacts beside it are still correct and
+    the generator reports nothing wrong. That happened: the *Which rendering to
+    emit* test was added and repositories installed before it kept emitting the
+    image into console sessions, with no command able to say why.
+    """
+    target = _within(root, os.path.join(root, LOCAL_NAME))
+    return _read(target) == local_document(root)
+
+
+def write_local(root):
+    """Write the local document, or None if it was already current."""
+    target = _within(root, os.path.join(root, LOCAL_NAME))
+    wanted = local_document(root)
+    if _read(target) == wanted:
+        return None
+    _write_atomically(target, wanted)
+    return target
+
+
+IDENTICON_HEADING = "## Sign every response with this repository's identicon"
+
+# From the heading to the next one at the same level, or to the end.
+IDENTICON_SECTION = re.compile(
+    r"\n*" + re.escape(IDENTICON_HEADING) + r".*?(?=\n## |\Z)", re.S)
+
+
+def retire(root, remove=False):
+    """Report, or remove, an identicon section left in the repository's CLAUDE.md.
+
+    The instructions moved into the rule this script owns. An install that
+    predates the move still carries them in `CLAUDE.md`, where they now say the
+    same thing twice -- and the documentation is explicit that contradicting
+    instructions get resolved arbitrarily.
+
+    **Removal is opt-in, and that is not timidity.** The section this tool
+    installs invites a repository to rewrite the surrounding explanation, and
+    promises in its own text that a re-run leaves that wording alone. Deleting
+    the section wholesale breaks the promise for anyone who took it up, so it
+    happens only when asked for by name.
+    """
+    instructions = _within(root, os.path.join(root, INSTRUCTIONS_NAME))
+    text = _read(instructions)
+    if text is None or not IDENTICON_SECTION.search(text):
+        return None
+    if not remove:
+        return "present"
+    updated = IDENTICON_SECTION.sub("", text).rstrip("\n") + "\n"
+    _write_atomically(instructions, updated)
+    return "removed"
+
+
 def instruct(root, literal, place=True, title=None):
     """Place or refresh the literal in CLAUDE.md. Returns what changed.
 
@@ -315,7 +553,7 @@ def instruct(root, literal, place=True, title=None):
 
 def parse(argv):
     """Arguments, or a refusal. An unrecognised flag never reaches a write."""
-    path, place, dry, extra, title = None, True, False, [], None
+    path, dry, extra, rule, remove = None, False, [], True, False
     rest = argv[1:]
 
     if "--" in rest:
@@ -326,14 +564,12 @@ def parse(argv):
         if argument in ("--help", "-h"):
             print(__doc__.strip())
             raise SystemExit(0)
-        if argument == "--no-instruct":
-            place = False
-        elif argument == "--dry-run":
+        if argument == "--dry-run":
             dry = True
-        elif argument == "--session-title":
-            title = True
-        elif argument == "--no-session-title":
-            title = False
+        elif argument == "--no-rule":
+            rule = False
+        elif argument == "--retire":
+            remove = True
         elif argument.startswith("-"):
             raise SystemExit(f"unrecognised flag: {argument}\n"
                              "Generator flags go after `--`.")
@@ -342,15 +578,31 @@ def parse(argv):
         else:
             raise SystemExit(f"unexpected argument: {argument}")
 
-    return os.path.abspath(path or os.getcwd()), place, dry, extra, title
+    return os.path.abspath(path or os.getcwd()), dry, extra, rule, remove
 
 
 def main(argv):
-    path, place, dry, extra, title = parse(argv)
+    path, dry, extra, rule, remove = parse(argv)
 
     if dry:
-        run_generator(path, ["--check", *extra])
-        return 0
+        # The generator's status says whether `.identicon/` would change. It is
+        # captured rather than raised on, because the rule file is a separate
+        # file with a separate failure and must be reported even when the
+        # artifacts are fine -- which is the usual case for a stale rule.
+        code = run_generator(path, ["--check", *extra], fatal=False)
+        root = _toplevel(path)
+
+        if rule:
+            current = local_is_current(root)
+            print(f"{os.path.join(root, LOCAL_NAME)} "
+                  f"{'unchanged' if current else 'would be updated'}")
+            if not current:
+                code = code or 1
+
+        if retire(root) == "present":
+            print(f"note: {INSTRUCTIONS_NAME} still carries an identicon "
+                  f"section, which duplicates the rule. `--retire` removes it.")
+        return code
 
     run_generator(path, extra)
 
@@ -358,13 +610,20 @@ def main(argv):
     # is handed the same path and resolves the root the same way the generator
     # does -- by asking git, not by guessing.
     root = _toplevel(path)
-    literal = image_literal(root)
-    changed = instruct(root, literal, place, title)
 
-    # Not "literal updated": the literal, the session-title section, or both may
-    # have changed, and naming only one of them is wrong half the time.
-    print(f"{os.path.join(root, INSTRUCTIONS_NAME)} "
-          f"{'updated' if changed else 'unchanged'}")
+    if rule:
+        written = write_local(root)
+        print(f"{os.path.join(root, LOCAL_NAME)} "
+              f"{'updated' if written else 'unchanged'}")
+
+    state = retire(root, remove)
+    if state == "removed":
+        print(f"{os.path.join(root, INSTRUCTIONS_NAME)} identicon section removed")
+    elif state == "present":
+        print(f"note: {INSTRUCTIONS_NAME} still carries an identicon section, "
+              f"which now duplicates the rule. `--retire` removes it; it is not "
+              f"removed automatically because a repository may have rewritten "
+              f"that prose.")
     return 0
 
 

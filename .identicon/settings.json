@@ -1,0 +1,52 @@
+{
+  "identicon": {
+    "current": {
+      "colour": "#cc1fca",
+      "colourMap": 0,
+      "matrix": [
+        [true, true, false, true, true],
+        [false, true, true, true, false],
+        [true, true, true, true, true],
+        [false, true, true, true, false],
+        [false, true, false, true, false]
+      ],
+      "seed": "Justin-Maxwell/Claude-Colophon",
+      "tricolour": {
+        "colours": [
+          { "colour": "purple", "shape": "circle" },
+          { "colour": "red", "shape": "square" },
+          { "colour": "purple", "shape": "circle" }
+        ]
+      }
+    },
+    "history": []
+  },
+  "renders": {
+    "blockDrawing": {
+      "ascii": [
+        "[][]  [][]",
+        "  [][][]  ",
+        "[][][][][]",
+        "  [][][]  ",
+        "  []  []  "
+      ],
+      "octant": [
+        "▂𜺠𜺣",
+        "𜶛𜶫𜴀"
+      ],
+      "sextant": [
+        "🬩🬵🬃",
+        "🬨🬬🬀"
+      ]
+    },
+    "tricolour": "🟣🟥🟣",
+    "vector": { "path": "M0 0H2V1H3V0H5V1H4V2H5V3H4V5H3V4H2V5H1V3H0V2H1V1H0" }
+  },
+  "user": {
+    "vector": {
+      "height": 28,
+      "viewBox": "-1 -1 84 7",
+      "width": 28
+    }
+  }
+}
