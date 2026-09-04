@@ -1,6 +1,6 @@
 # Permissions
 
-What this plugin causes Claude to run, and why. **Documentation only** — nothing
+What Claude Colophon causes Claude to run, and why. **Documentation only** — nothing
 here is installed or requested automatically. It exists so you can decide before
 approving, and so a prompt is never the first time you learn a tool wanted
 something.
@@ -21,7 +21,7 @@ repository you point them at.
 | once per session | a read of one environment variable | only as a tiebreak, see below |
 
 Nothing here makes a network call. Nothing reads outside the repository being
-worked on, except the plugin reading its own files.
+worked on, except Claude Colophon reading its own files.
 
 ## 1. The installer
 
@@ -34,11 +34,11 @@ itself — a section in `CLAUDE.md` at the repository root — and refuses any p
 that resolves outside it.
 
 **It runs a second program**: `repository-identicon`, the generator, which is a
-prerequisite of this plugin and writes the `.identicon/` directory. That program
-is not part of this plugin and carries its own documentation; a rule approving
+prerequisite of Claude Colophon and writes the `.identicon/` directory. That program
+is not part of Claude Colophon and carries its own documentation; a rule approving
 the installer approves it launching the generator too. It is found on your
-`PATH`, or in a sibling checkout during development, and nowhere else — the
-plugin does not download it.
+`PATH`, or in a sibling checkout during development, and nowhere else — Claude
+Colophon does not download it.
 
 Its only other subprocess is a read-only `git rev-parse --show-toplevel`. It
 never mutates git state.
@@ -110,12 +110,16 @@ a legible one anywhere else.
   the probe, at the cost of running in every session in every repository,
   including those with no identicon, to answer a question most sessions can
   already answer for free.
+- **No scheduled task, no cron, no daemon.** The session title refreshes when
+  you ask for it. A schedule would be a process outside this arrangement,
+  running on a machine that is assumed to still be the same machine.
 - **No network permission.** The derivation is a hash of your git remote's
   *name*. Nothing is fetched, and nothing is reported anywhere. The generator is
-  a prerequisite you install yourself; this plugin never retrieves it.
-- **No write access beyond the target repository**, enforced in the script
-  rather than merely intended: every path is resolved and checked against the
-  repository root before anything is written.
+  a prerequisite you install yourself; Claude Colophon never retrieves it.
+- **No write access beyond the target repository**, enforced in
+  `repo-identicon.py` rather than merely intended: every path is resolved and
+  checked against the repository root before anything is written.
+  `tricolour.py` writes nothing at all.
 
 ## Rule syntax
 

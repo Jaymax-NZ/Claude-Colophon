@@ -13,7 +13,7 @@ it. That is precisely what this is: a mark, at the end, saying where you are.
 
 [Repository Identicon](https://github.com/Justin-Maxwell/Repository-Identicon)
 is a prerequisite. It is the standard and its reference implementation, and it
-derives the mark; this plugin does not carry a copy of that and will not fall
+derives the mark; Claude Colophon does not carry a copy of that and will not fall
 back to one. Put `repository-identicon` on your `PATH`.
 
 ```
