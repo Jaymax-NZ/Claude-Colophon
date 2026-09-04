@@ -2,8 +2,9 @@
 
 ## Sign every response with this repository's identicon
 
-Emit the turn mark below, verbatim, as the last line of every response in
-this repository. Nothing after it.
+Emit the mark, verbatim, as the last line of every response in this
+repository. Nothing after it. Which of the two renderings to use is
+decided by the test under *Which rendering to emit*, below.
 
 **Also emit it immediately before asking the user anything** -- as the last
 line of the text preceding a question, including before a tool call that
@@ -12,9 +13,44 @@ turn-end at all, so it is both the turn most likely to lose the mark and the
 one where the reader most needs it: they are being asked to stop and decide,
 and which project is asking is part of the question.
 
-Which size to emit is a reader's choice, stated once in `~/.claude/CLAUDE.md`
-and applying to every repository with an identicon. Absent a stated choice,
-use block 3.
+## Which rendering to emit
+
+There are two, and choosing between them is a **test, not a judgement**.
+Check whether this session has any `mcp__ccd*` tools:
+
+- **Present** -- a desktop-hosted pane, which renders markdown images.
+  Emit one of the literals from `## Turn mark`, and nothing else.
+- **Absent** -- a console session or a headless `claude -p` run, where a
+  `data:` URI arrives as a wall of base64 and nothing else. Emit the
+  `## Sextant` block, then a space, then the `## Tricolour` value.
+
+Those tools are injected by the desktop app, so asking whether they exist
+*is* the question asked directly. `CLAUDE_CODE_ENTRYPOINT` (`cli` versus
+`claude-desktop`) and `TERM` corroborate it at the cost of a command; the
+tool check costs nothing.
+
+**This is not a preference and does not belong in a preference file.** An
+earlier version said only "where a terminal needs the pattern", left the
+test unstated, and the image won by default -- emitted into console
+sessions as unreadable base64 more than once.
+
+Which *size*, and sextant versus octant, are reader's choices, stated once
+in `~/.claude/CLAUDE.md` and applying to every repository with an
+identicon. Absent a stated choice, use block 3 and sextant.
+
+**Never base64 another file to make the mark.** The literals below are the
+only ones. `-128`, `-256` and `@4x` in `.identicon/` exist for favicons,
+avatars and displays that scale; embedded in a reply they render as a large
+bordered card rather than an inline mark, because the client sizes the image
+from its own pixel dimensions and raw `<img width>` is printed as literal
+text. Observed 2026-09-02 in a cloud session, which had no copy of this rule
+and reached for a raster instead.
+
+**Never assemble the tricolour yourself.** Use `renders.tricolour` from
+`.identicon/settings.json`, or the `## Tricolour` value below, verbatim.
+The shape-and-colour pairs beside it in settings are the generator's
+workings, not an instruction to rebuild the string -- the same cloud session
+produced a different arrangement of the right colours by doing that.
 
 **Why this is an instruction rather than a hook**, given that an instruction
 depends on compliance and a hook does not: no hook output field can display

@@ -69,18 +69,24 @@ def find_generator():
         "Repository-Identicon, or check it out beside this repository.")
 
 
-def run_generator(path, extra=()):
+def run_generator(path, extra=(), fatal=True):
     """Run `apply` against `path`. The generator's own output goes to the user.
 
-    Its exit status is passed through rather than interpreted. It refuses for
-    reasons this script has no business second-guessing -- a mapping version it
-    will not draw, a path outside a repository -- and each refusal already
-    carries the remedy in its message.
+    Returns its exit status. With `fatal`, a non-zero status also exits this
+    script, because a write path must not continue past a generator that
+    refused. It refuses for reasons this script has no business
+    second-guessing -- a mapping version it will not draw, a path outside a
+    repository -- and each refusal already carries the remedy in its message.
+
+    `fatal=False` is for `--check`, where a non-zero status means "these
+    artifacts would change" rather than "stop". The rule file is checked
+    afterwards and reports separately.
     """
     command = [*find_generator(), "apply", *extra, path]
     completed = subprocess.run(command)
-    if completed.returncode != 0:
+    if completed.returncode != 0 and fatal:
         raise SystemExit(completed.returncode)
+    return completed.returncode
 
 
 # --------------------------------------------------------------------------
@@ -421,6 +427,21 @@ def local_document(root):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+def local_is_current(root):
+    """Whether the rule file on disk is what this version would write.
+
+    The rule file goes stale on its own schedule. Its text is written here, so
+    it changes when this script changes -- a section added to
+    `local_document` leaves every already-installed rule file missing that
+    section, while the `.identicon/` artifacts beside it are still correct and
+    the generator reports nothing wrong. That happened: the *Which rendering to
+    emit* test was added and repositories installed before it kept emitting the
+    image into console sessions, with no command able to say why.
+    """
+    target = _within(root, os.path.join(root, LOCAL_NAME))
+    return _read(target) == local_document(root)
+
+
 def write_local(root):
     """Write the local document, or None if it was already current."""
     target = _within(root, os.path.join(root, LOCAL_NAME))
@@ -550,8 +571,24 @@ def main(argv):
     path, dry, extra, rule, remove = parse(argv)
 
     if dry:
-        run_generator(path, ["--check", *extra])
-        return 0
+        # The generator's status says whether `.identicon/` would change. It is
+        # captured rather than raised on, because the rule file is a separate
+        # file with a separate failure and must be reported even when the
+        # artifacts are fine -- which is the usual case for a stale rule.
+        code = run_generator(path, ["--check", *extra], fatal=False)
+        root = _toplevel(path)
+
+        if rule:
+            current = local_is_current(root)
+            print(f"{os.path.join(root, LOCAL_NAME)} "
+                  f"{'unchanged' if current else 'would be updated'}")
+            if not current:
+                code = code or 1
+
+        if retire(root) == "present":
+            print(f"note: {INSTRUCTIONS_NAME} still carries an identicon "
+                  f"section, which duplicates the rule. `--retire` removes it.")
+        return code
 
     run_generator(path, extra)
 

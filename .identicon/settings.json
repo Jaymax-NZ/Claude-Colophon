@@ -39,6 +39,14 @@
         "🬨🬬🬀"
       ]
     },
-    "tricolour": "🟣🟥🟣"
+    "tricolour": "🟣🟥🟣",
+    "vector": { "path": "M0 0H2V1H3V0H5V1H4V2H5V3H4V5H3V4H2V5H1V3H0V2H1V1H0" }
+  },
+  "user": {
+    "vector": {
+      "height": 28,
+      "viewBox": "-1 -1 84 7",
+      "width": 28
+    }
   }
 }
