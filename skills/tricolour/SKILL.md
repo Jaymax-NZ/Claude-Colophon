@@ -41,6 +41,28 @@ Its result reports the previous title. If that title was clearly deliberate
 rather than generated, set it again immediately as the tricolour plus the
 previous title — one extra call, and it respects a name the user chose by hand.
 
+**Without `mcp__ccd*` tools, print a line for the user to paste instead:**
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/skills/tricolour/tricolour.py" --self
+```
+
+It reads this session's title off disk, strips any tricolour already at the
+front, and prints `rename<TAB>/rename <tricolour> <name>`. Emit that command on
+its own line, prefixed with `Enter this prompt:`, and nothing else — no code
+fence. A fence is presentational in a terminal, where there is no click-to-copy,
+and it risks the mouse selection picking up indentation.
+
+When it prints `current<TAB>yes` the title is already correct. Say so and emit
+no line: a command that changes nothing invites a pointless paste.
+
+`/rename` takes the rest of the line raw, so the name needs no quoting and no
+escaping even when it contains spaces or an apostrophe.
+
+**This marks only the session that runs it**, which is the whole of what a
+session without the tools can do. It cannot reach a peer, and a peer console
+session cannot be reached by anything — it has to run `/tricolour` itself.
+
 **4. Mark the matches.** For each `match` line, find its session in the listing
 by `cwd` and `set_session_title` with the tricolour prefixed to its existing
 title.
@@ -90,8 +112,17 @@ returned by `get_session` or `search_session_transcripts` either. Confirmed
 2026-09-02, after three wrong explanations — the sidebar showed three sessions
 for this repository and the listing returned one.
 
-`ListAgents` does not fill the gap: it reports peers, and a cloud session need
-not appear there.
+**`ListAgents` fills part of the gap, with Remote Control connected.** On
+2026-09-04 it returned 16 peers labelled by kind — 12 `Remote Control`, 2
+`cloud`, 2 local `interactive` — so cloud sessions were visible there while
+`list_sessions` could not see them. An earlier version of this note said a cloud
+session "need not appear there" and concluded nothing could see across surfaces;
+that conclusion was wrong.
+
+It still does not let you act. `ListAgents` reports no `cwd`, and membership is
+decided by reading each candidate's `.identicon/settings.json` — so its rows
+cannot be matched to this repository, and a title that looks like a match is a
+guess. Never mark on the strength of one.
 
 So a cloud session cannot be marked from here at all. It also cannot run this
 skill, which is not installed in that environment.
@@ -102,9 +133,20 @@ session the listing missed, the fix is to run `/tricolour` inside it: a session
 can always mark itself with `"self"`, whatever the listing does or does not
 know about it.
 
-A session with no `mcp__ccd*` tools is a separate case and genuinely cannot mark
-itself, since `set_session_title` is one of those tools. That is the same signal
-the rule uses to choose the text rendering over the image.
+A session with no `mcp__ccd*` tools cannot mark itself, since
+`set_session_title` is one of those tools. That is the same signal the rule uses
+to choose the text rendering over the image. It prints a line to paste instead —
+see step 3.
+
+**Four routes were tested on 2026-09-04 and three are closed.** `/rename` is a
+built-in the client executes; it arrives already done and the model never gets
+to call it. A prompt enqueued by `CronCreate` reaches the model as text, so a
+leading `/` is just a character — skill-backed commands still work that way,
+because the model can invoke the skill, but a built-in has no tool behind it.
+Writing `custom-title.json` persists and changes nothing, because the client
+holds the title in memory and writes that file on change rather than reading it
+back; `sessions/<pid>.json` was rewritten by the client during the test, so a
+write there would have been clobbered. Only a person typing `/rename` works.
 
 ## What not to do
 
