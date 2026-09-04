@@ -41,6 +41,14 @@ Its result reports the previous title. If that title was clearly deliberate
 rather than generated, set it again immediately as the tricolour plus the
 previous title — one extra call, and it respects a name the user chose by hand.
 
+**Judge that from the title itself. `nameSource` will not tell you.** The field
+sits beside the name in `~/.claude/sessions/<pid>.json` and reads `user` or
+`derived`, which looks like the fact this step wants and is not. `/rename` sets
+`user`; `set_session_title` leaves `derived` even though a person asked for it.
+So `derived` covers both a generated name and a deliberate one, and routing on
+it would overwrite titles it was meant to protect. Verified 2026-09-04 by
+renaming one session each way and reading both records back.
+
 **Without `mcp__ccd*` tools, print a line for the user to paste instead:**
 
 ```bash
