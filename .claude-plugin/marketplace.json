@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-colophon",
-  "description": "Give every repository an identicon, and sign each turn with it",
+  "description": "Give every repository an identicon, sign each turn with it, and tag session titles with its tricolour",
   "owner": {
     "name": "Justin Maxwell"
   },
   "plugins": [
     {
       "name": "claude-colophon",
-      "description": "Give every repository an identicon derived from its git remote, and have Claude sign each turn with it — so parallel sessions on different projects are distinguishable at a glance",
+      "description": "Give every repository an identicon derived from its git remote, have Claude sign each turn with it, and tag session titles with its tricolour — so parallel sessions on different projects are distinguishable at a glance",
       "author": {
         "name": "Justin Maxwell"
       },
