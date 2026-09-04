@@ -72,9 +72,9 @@ until then nothing new goes near it.
 
 **`.identicon/` is the only source of the tricolour. Nothing computes it.**
 
-The squares are produced by the identicon generator, from the key, by a
+The tricolour is produced by the identicon generator, from the key, by a
 derivation that is specified and conformance-tested elsewhere. A second thing
-that can produce them is a second thing that can disagree, and the disagreement
+that can produce it is a second thing that can disagree, and the disagreement
 would be silent and permanent — a repository would have two identities, each
 correct according to whatever produced it.
 
@@ -133,15 +133,16 @@ and will not be in `CLAUDE.md` at all once the extraction above is done.
 
 ## Placement and format
 
-    <square><square><square><space><whatever the title already was>
+    <tricolour><space><whatever the title already was>
 
-**Prefix, not suffix.** The turn signature goes last because the squares sit
+**Prefix, not suffix.** The turn signature goes last because the tricolour sits
 flush against the end of a full line of octants. A session list truncates on the
 right, so in a title the mark goes first. Same reasoning, opposite end.
 
 Applying is idempotent and self-correcting: a title already carrying the correct
-triple is left alone; one carrying a *different* triple has it replaced, which
-is what makes a re-seed or a repository rename converge rather than accumulate.
+tricolour is left alone; one carrying a *different* tricolour has it replaced,
+which is what makes a re-seed or a repository rename converge rather than
+accumulate.
 
 ## Who renames whom
 
@@ -160,14 +161,14 @@ running session on Claude Desktop. The claim came from generalising
 it, and it produced a design for an external renamer that is not needed.
 
 So the procedure is: **try, then read back**. If the title comes back carrying
-the triple, done. If it does not, this surface cannot self-tag, and the tag has
+the tricolour, done. If it does not, this surface cannot self-tag, and the tag has
 to be applied by a peer.
 
 ### The peer path, and the rule it must not break
 
 A peer session cannot read the target repository's `.identicon/` — it is not in
-that checkout. It must therefore **never work out the triple itself**. The
-triple travels to it as data, read by the session that *is* in the repository
+that checkout. It must therefore **never work out the tricolour itself**. The
+tricolour travels to it as data, read by the session that *is* in the repository
 and handed over.
 
 Derivation happens exactly once, in the checkout that owns the mark. Everything
